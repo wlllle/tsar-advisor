@@ -1,0 +1,36 @@
+h1 {
+  font-size: 26px;
+}
+
+.summary-post {
+  border-bottom: solid 1px #fff;
+  margin: 0 20px;
+}
+
+.summary-post p {
+  font-size: 18px;
+}
+
+.summary-item-list {
+  padding: 0 20px 20px;
+  font-size: 18px;
+  list-style: none;
+}
+.source-link {
+  color: darkorange;
+  text-decoration: none;
+}
+
+.number {
+  color: burlywood;
+}
+
+.clear{
+  padding: 0;
+  display: block;
+  width: 0;
+  height: 0 !important;
+  clear: both !important;
+  overflow: hidden;
+  visibility: hidden;
+}

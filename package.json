@@ -1,0 +1,81 @@
+{
+    "name": "tsar-advisor",
+    "displayName": "TSAR Advisor",
+    "description": "This tool proposes some useful information about a program to simplify its parallelization.",
+    "version": "0.0.1",
+    "publisher": "DVM",
+    "homepage": "http://dvm-system.org",
+    "keywords": [
+      "parallel programming",
+      "program analysis",
+      "automated parallelization"
+    ],
+    "preview": true,
+    "license": "SEE LICENSE IN LICENSE.txt",
+    "engines": {
+      "vscode": "^1.8.0",
+      "node": ">=6.0.0"
+    },
+    "categories": [
+      "Other"
+    ],
+    "activationEvents": [
+      "onCommand:tsar.start",
+      "onCommand:tsar.stop"
+    ],
+    "main": "./out/src/extension",
+    "contributes": {
+      "commands": [{
+        "command": "tsar.start",
+        "title": "TSAR: Analyze file"
+      },
+      {
+        "command": "tsar.stop",
+        "title": "TSAR: Close session"
+      }],
+      "menus": {
+        "editor/context": [{
+          "command": "tsar.start",
+          "when": "editorLangId == 'cpp'",
+          "group": "1_tsar"
+        },
+        {
+          "command": "tsar.start",
+          "when": "editorLangId == 'c'",
+          "group": "1_tsar"
+        },
+        {
+          "command": "tsar.stop",
+          "when": "editorLangId == 'cpp'",
+          "group": "1_tsar"
+        },
+        {
+          "command": "tsar.stop",
+          "when": "editorLangId == 'c'",
+          "group": "1_tsar"
+        }]
+      }
+    },
+    "scripts": {
+      "vscode:prepublish": "node ./node_modules/vscode/bin/compile",
+      "postinstall": "node ./node_modules/vscode/bin/install",
+      "watch-ts": "node ./node_modules/vscode/bin/compile -watch -p ./",
+      "watch-css": "catw ./html/*.css -o ./out/src/style.css -v",
+      "watch-addon": "node ./addon/addon.js -d ../../dvmhrepo/sapfor/idb/trunk/src/base ../tsar-370/tsar ./out/src",
+      "watch": "npm-run-all -c -n -p watch-ts watch-css watch-addon"
+    },
+    "devDependencies": {
+      "typescript": "^2.0.3",
+      "vscode": "^0.11.0",
+      "catw": "~0.0.1",
+      "copy": "~0.3.0",
+      "watch": "~1.0.1",
+      "npm-run-all": "~3.1.2",
+      "node-gyp": "~3.4.0"
+    },
+    "extensionDependencies": [
+      "ms-vscode.cpptools"
+    ],
+    "dependencies": {
+    }
+}

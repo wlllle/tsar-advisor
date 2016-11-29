@@ -1,0 +1,11 @@
+.vscode/**
+typings/**
+out/test/**
+test/**
+src/**
+addon/**
+**/*.map
+.editorconfig
+.gitignore
+tsconfig.json
+vsc-extension-quickstart.md
