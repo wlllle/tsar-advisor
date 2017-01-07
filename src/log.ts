@@ -46,6 +46,8 @@ export class Error {
   static rejected = 'request has been rejected by the server';
   static unknownResponse = 'unknown response has been received {0}';
   static unknownMessage = 'unknown message has been received {0}';
+  static openFile = 'can not open file {0}';
+  static unavailable = 'project is unavailable'
 }
 
 export class Message {

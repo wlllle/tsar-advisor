@@ -18,20 +18,30 @@ import * as log from './log';
 /**
  * Encodes location for content provider.
  */
-export function encodeLocation(
-    scheme: string, uri: vscode.Uri, pos?: vscode.Position): vscode.Uri {
-  const query = pos ?
-    JSON.stringify([uri.toString(), pos.line, pos.character]) :
-    JSON.stringify([uri.toString()]);
-  return vscode.Uri.parse(`${scheme}://results?${query}`);
+export function encodeLocation(scheme: string, prjUri: vscode.Uri,
+    uri?: vscode.Uri, pos?: vscode.Position): vscode.Uri {
+  let project = JSON.stringify(prjUri.toString());
+  let query = [];
+  if (uri)
+    query.push(uri.toString());
+  if (pos)
+    query.push(pos.line, pos.character);
+  return vscode.Uri.parse(`${scheme}://${project}?${JSON.stringify(query)}`);
 }
 
 /**
- * Decodes location for content provider.
+ * Decodes location for content provider,
+ * returns [uri of project, additional uri, and position].
  */
-export function decodeLocation(uri: vscode.Uri): [vscode.Uri, vscode.Position] {
+export function decodeLocation(uri: vscode.Uri):
+    [vscode.Uri, vscode.Uri, vscode.Position] {
+  let project = vscode.Uri.parse(JSON.parse(uri.authority + uri.path));
   let [target, line, ch] = <[string, number, number]>JSON.parse(uri.query);
-  return [vscode.Uri.parse(target), new vscode.Position(line, ch)];
+  return [
+    project,
+    target === undefined ? undefined : vscode.Uri.parse(target),
+    line === undefined || ch === undefined ? undefined : new vscode.Position(line, ch)
+  ];
 }
 
 /**
@@ -39,7 +49,9 @@ export function decodeLocation(uri: vscode.Uri): [vscode.Uri, vscode.Position] {
  */
 export function projectLink(project: Project): string {
   return `
-    <a class="source-link" href="file://${project.uri.fsPath}" title=${project.uri.fsPath}>
+    <a class="source-link"
+       href="${encodeURI('command:tsar.open-project?' + JSON.stringify(project.uri))}"
+       title=${project.uri.fsPath}>
       ${path.basename(project.prjname)}
     </a>`;
   }

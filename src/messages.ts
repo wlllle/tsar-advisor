@@ -139,19 +139,31 @@ export class CommandLine {
 }
 
 /**
+ * This represents statistic of traits explored in an analyzed project.
+ */
+export interface TraitStatistic {
+  AddressAccess: number;
+  NoAccess: number;
+  Shared: number;
+  Private: number;
+  FirstPrivate: number;
+  SecondToLastPrivate: number;
+  LastPrivate: number;
+  DynamicPrivate: number;
+  Reduction: number;
+  Dependency: number;
+  Induction: number;
+}
+
+/**
  * This represents statistic for analyzed project.
  */
 export class Statistic {
   Files: {string:number};
   Functions: number;
   Loops: [number,number];
-  Variables: number;
-  Privates: number;
-  LastPrivates: number;
-  FirstPrivates: number;
-  DynamicPrivates: number;
-  Dependencies: number;
-  Reductions: number;
+  Variables: [number, number];
+  Traits: TraitStatistic;
 
   toJSON(): StatisticJSON {
     let json:any = Object.assign({name: Statistic.name}, this);
@@ -159,6 +171,11 @@ export class Statistic {
     if (this.Loops !== undefined) {
       json.Loops[Analysis[Analysis.Yes]] = this.Loops[Analysis.Yes];
       json.Loops[Analysis[Analysis.No]] = this.Loops[Analysis.No];
+    }
+    json.Variables = undefined;
+    if (this.Variables !== undefined) {
+      json.Variables[Analysis[Analysis.Yes]] = this.Variables[Analysis.Yes];
+      json.Variables[Analysis[Analysis.No]] = this.Variables[Analysis.No];
     }
     return json;
   }
@@ -169,11 +186,14 @@ export class Statistic {
     } else {
       let obj = Object.create(Statistic.prototype);
       for (let key in json)
-        if (key != 'Loops')
+        if (key != 'Loops' && key != 'Variables')
           obj[key] = json[key];
       obj.Loops = {};
       obj.Loops[Analysis.Yes] = json.Loops[Analysis[Analysis.Yes]];
       obj.Loops[Analysis.No] = json.Loops[Analysis[Analysis.No]];
+      obj.Variables = {};
+      obj.Variables[Analysis.Yes] = json.Variables[Analysis[Analysis.Yes]];
+      obj.Variables[Analysis.No] = json.Variables[Analysis[Analysis.No]];
       return obj;
     }
   }
@@ -216,12 +236,7 @@ export interface DiagnosticJSON extends MessageJSON {
 export interface StatisticJSON extends MessageJSON {
   Functions: number;
   Loops: {string:number};
-  Variables: number;
-  Privates: number;
-  LastPrivates: number;
-  FirstPrivates: number;
-  DynamicPrivates: number;
-  Dependencies: number;
-  Reductions: number;
+  Variables: {string: number};
+  Traits: TraitStatistic;
 }
 

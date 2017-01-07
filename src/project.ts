@@ -15,7 +15,7 @@ import * as fs from 'fs';
 import * as net from 'net';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import {encodeLocation} from './functions';
+import {encodeLocation, decodeLocation} from './functions';
 import {ProjectProvider} from './general';
 import * as log from './log';
 import * as msg from './messages';
@@ -23,13 +23,14 @@ import * as msg from './messages';
 /**
  * This controls all currently active projects evaluated by the extension.
  */
-export default class ProjectEngine {
-  private _projects = new Map<vscode.Uri, Project>();
+export class ProjectEngine {
+  private _projects = new Map<string, Project>();
   private _parser = new msg.Parser(
     msg.Diagnostic,
     msg.Statistic
   );
   private _context: vscode.ExtensionContext;
+  private _providers = {};
 
   /**
    * Creates engine is a specified extension context.
@@ -47,10 +48,32 @@ export default class ProjectEngine {
   }
 
   /**
+   * Register list of project content providers.
+   *
+   * Only these  content providers can be used to show some information about
+   * analyzed project.
+   */
+  register(...args: [string, ProjectContentProvider][]) {
+    for (let arg of args) {
+      this._context.subscriptions.push(
+        vscode.workspace.registerTextDocumentContentProvider(
+          arg[0], arg[1]));
+      this._providers[arg[0]] = arg[1];
+    }
+  }
+
+  /**
    * Returns true if analysis of a specified project has been already activated.
    */
   isActive(uri: vscode.Uri): boolean {
-    return this._projects.has(uri);
+    return this._projects.has(uri.toString());
+  }
+
+  /**
+   * Returns project with a specified URI.
+   */
+  project(uri: vscode.Uri): Project|undefined {
+    return this._projects.get(uri.toString());
   }
 
   /**
@@ -61,6 +84,14 @@ export default class ProjectEngine {
    */
   start(doc: vscode.TextDocument): Thenable<msg.Diagnostic|undefined> {
     return new Promise((resolve, reject) => {
+      let project = this.project(doc.uri);
+      if (project !== undefined) {
+        vscode.commands.executeCommand('vscode.previewHtml',
+          encodeLocation(ProjectProvider.scheme, project.uri),
+          vscode.ViewColumn.Two,
+          `${log.Extension.displayName} | ${project.prjname}`);
+        return undefined;
+      }
       let check = this._checkDocument(doc);
       if (check)
         return reject(check);
@@ -69,7 +100,7 @@ export default class ProjectEngine {
       if (typeof prjDir != 'string')
         return reject(prjDir);
       this._startServer(uri, prjDir);
-      return resolve(undefined);
+      return undefined;
     })
   }
 
@@ -84,10 +115,11 @@ export default class ProjectEngine {
    * Stops analysis of a specified project.
    */
   private _stop(uri: vscode.Uri) {
-    let project = this._projects.get(uri);
-    if (project)
-      project.dispose();
-    this._projects.delete(uri);
+    let project = this.project(uri);
+    if (project === undefined)
+      return;
+    project.dispose();
+    this._projects.delete(project.uri.toString());
   }
 
   /**
@@ -99,8 +131,6 @@ export default class ProjectEngine {
     /// TODO (kaniadnr@gmail.com): suggest save it and open appropriate dialog.
     if (doc.isUntitled)
       diag.Error.push(log.Error.untitled.replace('{0}', uri.fsPath));
-    if (this.isActive(uri))
-      diag.Error.push(log.Error.alreadyActive);
     if (!log.Extension.langauges[doc.languageId])
       diag.Error.push(log.Error.language.replace('{0}', uri.fsPath));
     return (diag.Error.length > 0) ? diag : undefined;
@@ -158,21 +188,20 @@ export default class ProjectEngine {
         // if data is not listening then it is en error description
         if (data !== log.Message.listening)
           throw JSON.parse(data);
-        let project: Project;
         client = net.connect(pipe, () => {client.setEncoding('utf8')});
-        project = new Project(uri, prjDir, client, server);
+        let project = new Project(uri, prjDir, client, server);
         this._context.subscriptions.push(project);
-        project.register(ProjectProvider.scheme, new ProjectProvider(project));
-        this._projects.set(uri, project);
+        for (let scheme in this._providers)
+          project.register(scheme, this._providers[scheme].state());
+        this._projects.set(uri.toString(), project);
         client.on('error', (err) => {this._internalError(err)});
         client.on('data', (data) => {console.log(`server: ${data}`)});
         client.on('data', this._onResponse.bind(this, project, client));
         vscode.commands.executeCommand('vscode.previewHtml',
-          encodeLocation(
-            project.providerScheme(ProjectProvider.scheme), project.uri),
+          encodeLocation(ProjectProvider.scheme, project.uri),
           vscode.ViewColumn.Two,
           `${log.Extension.displayName} | ${project.prjname}`).
-        then((success) => {this._runAnalysis(project)}, (reason) => {});
+        then((success) => {this._runAnalysis(project)}, null);
       }
       catch(err) {
         this._internalError(err);
@@ -271,9 +300,31 @@ export default class ProjectEngine {
 export interface ProjectContentProvider
     extends vscode.TextDocumentContentProvider {
   /**
-   * Update visible content.
+   * Returns new description of a project content provider state.
    */
-  update();
+  state(): ProjectContentProviderState;
+
+  /**
+   * Update visible content for a specified project.
+   */
+  update(project: Project);
+}
+
+/**
+ * This describes state of a project content provider.
+ */
+export interface ProjectContentProviderState {
+  /**
+   * Content provider with a current state.
+   */
+  provider: ProjectContentProvider;
+
+  /**
+   * Disposes the state.
+   *
+   * Do not dispose providers when state is disposed.
+   */
+  dispose(): any;
 }
 
 /**
@@ -291,9 +342,9 @@ export class Project {
   private _server: child_process.ChildProcess;
   private _responses = [];
   private _newResponse = 0;
-  private _providers = new Map<string, ProjectContentProvider>();
+  private _providers = new Map<string, ProjectContentProviderState>();
   private _output: vscode.OutputChannel
-  private _disposable;
+  private _disposable: vscode.Disposable;
 
   /**
    * Creates a project with a specified uri.
@@ -335,53 +386,48 @@ export class Project {
 
   /**
    * Registers content provider with a specified base scheme.
+   */
+  register(scheme: string, state: ProjectContentProviderState) {
+    this._providers.set(scheme, state);
+    this._disposable = vscode.Disposable.from(this._disposable, state);
+  }
+
+  /**
+   * Returns state of content provider with a specified scheme.
    *
-   * Note that 'scheme' parameter will be used to construct unique scheme in
-   * accordance to the project identifier. So 'scheme' parameter must not be
-   * unique for different project but must be different for different provider
-   * classes, for example see ProjectProvider.scheme field.
+   * The provider with a specified scheme must be at first registered in a
+   * project with register() method.
    */
-  register(scheme: string, provider: ProjectContentProvider) {
-    this._providers.set(scheme, provider);
-    this._disposable = vscode.Disposable.from(this._disposable,
-      vscode.workspace.registerTextDocumentContentProvider(
-        this.providerScheme(scheme), provider));
+  providerState(scheme: string) : ProjectContentProviderState|undefined {
+    return this._providers.get(scheme);
   }
 
   /**
-   * Returns unique scheme for a provider with a specified base scheme.
-   */
-  providerScheme(scheme: string) : string {
-    return encodeURIComponent(
-      `${scheme}:///${this._prjUri.toString()}`).replace(/%/g,'+');
-  }
-
-  /**
-   * Updates provider with a specified base scheme.
+   * Updates provider with a specified scheme.
    *
    * The specified response will be stored in a queue of response and can be
    * accessed via response() getter.
    */
   update(scheme: string, response: any) {
     this._responses.push(response);
-    this._providers.get(scheme).update();
+    let state = this.providerState(scheme);
+    if (state)
+      state.provider.update(this);
   }
 
   /**
-   * Returns number of responses in a stack.
+   * Returns number of all responses some of which have been already evaluated
+   * and other are new responses.
    */
   responseNumber(): number { return this._responses.length; }
 
   /**
    * Extract the first response which has not been evaluated yet from a response
-   * queue stack.
-   *
-   * Returns undefined if there are no responses in a queue.
+   * queue.
    */
-  pop(): any|undefined {
-    return (this._responses.length &&
-      this._newResponse < this._responses.length) ?
-      this._responses[this._newResponse++] : undefined;
+  pop(): any|undefined  {
+    if (this._newResponse < this._responses.length)
+      return this._responses[this._newResponse++];
   }
 
   /**
@@ -400,11 +446,12 @@ export class Project {
   get prjname(): string { return path.basename(this._prjUri.fsPath); }
 
   /**
-   * Returns the last extracted response.
+   * Returns the first response which has not been evaluated yet, to mark that
+   * it is evaluated use pop() function.
    */
   get response(): any|undefined {
-    return (this._responses.length && this._newResponse > 0) ?
-      this._responses[this._newResponse - 1] : undefined;
+    return (this._newResponse < this._responses.length) ?
+      this._responses[this._newResponse] : undefined;
   }
 
   /**
