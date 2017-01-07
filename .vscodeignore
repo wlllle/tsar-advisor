@@ -4,6 +4,7 @@ out/test/**
 test/**
 src/**
 addon/**
+build/**
 **/*.map
 .editorconfig
 .gitignore
