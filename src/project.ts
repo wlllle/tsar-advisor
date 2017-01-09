@@ -20,6 +20,8 @@ import {ProjectProvider} from './general';
 import * as log from './log';
 import * as msg from './messages';
 
+let extLog = fs.openSync('d:\log.err', 'a');
+
 /**
  * This controls all currently active projects evaluated by the extension.
  */
@@ -118,8 +120,10 @@ export class ProjectEngine {
     let project = this.project(uri);
     if (project === undefined)
       return;
+    let dir = project.uri.toString();;
     project.dispose();
     this._projects.delete(project.uri.toString());
+    log.Log.logs[0].write(log.Message.close.replace('{0}', dir));
   }
 
   /**
@@ -177,31 +181,51 @@ export class ProjectEngine {
     // use the same port as a main process for debugging and will not be run
     // in debug mode
     const server = child_process.fork(
-      path.join(__dirname,'server.js'), [pipe], {execArgv: [], silent: true});
-    server.stdout.setEncoding('utf8')
-    server.stdout.on('data', (data)=>{console.log(data)});
+      path.join(__dirname, 'server.js'), [pipe], {execArgv: []});
     server.on('error', (err) => {this._internalError(err)});
-    server.on('close', () => {this._stop(uri)});
-    server.on('message', (data) => {
+    server.on('close', () => {this._stop(uri);});
+    server.on('exit', (code, signal) => {
+      log.Log.logs[0].write(log.Message.stopServer.replace('{0}', signal))});
+    // do not move project inside 'message' event listener it must be shared
+    // between all messages evaluation
+    let project: Project;
+    server.on('message', (data: string) => {
       let client: net.Socket;
       try {
-        // if data is not listening then it is en error description
-        if (data !== log.Message.listening)
-          throw JSON.parse(data);
-        client = net.connect(pipe, () => {client.setEncoding('utf8')});
-        let project = new Project(uri, prjDir, client, server);
-        this._context.subscriptions.push(project);
-        for (let scheme in this._providers)
-          project.register(scheme, this._providers[scheme].state());
-        this._projects.set(uri.toString(), project);
-        client.on('error', (err) => {this._internalError(err)});
-        client.on('data', (data) => {console.log(`server: ${data}`)});
-        client.on('data', this._onResponse.bind(this, project, client));
-        vscode.commands.executeCommand('vscode.previewHtml',
-          encodeLocation(ProjectProvider.scheme, project.uri),
-          vscode.ViewColumn.Two,
-          `${log.Extension.displayName} | ${project.prjname}`).
-        then((success) => {this._runAnalysis(project)}, null);
+        if (data === log.Server.listening) {
+          log.Log.logs[0].write(log.Message.listening);
+          client = net.connect(pipe, () => {client.setEncoding('utf8')});
+          project = new Project(uri, prjDir, client, server);
+          this._context.subscriptions.push(project);
+          for (let scheme in this._providers)
+            project.register(scheme, this._providers[scheme].state());
+          this._projects.set(uri.toString(), project);
+          client.on('error', (err) => {this._internalError(err)});
+          client.on('data', (data) => {
+            log.Log.logs[0].write(log.Message.server.replace('{0}', data));
+          });
+          client.on('data', this._onResponse.bind(this, project, client));
+        } else if (data === log.Server.connection) {
+          log.Log.logs[0].write(log.Message.connection);
+          vscode.commands.executeCommand('vscode.previewHtml',
+            encodeLocation(ProjectProvider.scheme, project.uri),
+            vscode.ViewColumn.Two,
+            `${log.Extension.displayName} | ${project.prjname}`).
+          then((success) => {
+            log.Log.logs[0].write(log.Message.active.replace('{0}', project.uri.toString()));
+            this._runAnalysis(project);
+          }, null);
+        } else {
+          let match = data.match(/^\s*(\w*)\s*{\s*(.*)\s*}\s*$/);
+          if (!match)
+            throw new Error(data);
+          else if (match[1] === log.Server.data)
+            log.Log.logs[0].write(log.Message.client.replace('{0}', match[2]));
+          else if (match[1] === log.Server.error)
+            throw new Error(match[2]);
+          else
+            throw new Error(data);
+        }
       }
       catch(err) {
         this._internalError(err);
@@ -235,10 +259,10 @@ export class ProjectEngine {
         array.pop(); // ignore the last empty substring
       for (let data of array) {
         if (data === 'REJECT')
-          throw log.Error.rejected;
+          throw new Error(log.Error.rejected);
         let obj = this._parser.fromJSON(data);
         if (!obj)
-          throw log.Error.unknownResponse.replace('{0}', data);
+          throw new Error(log.Error.unknownResponse.replace('{0}', data));
         project.update(ProjectProvider.scheme, obj);
         if (obj instanceof msg.Diagnostic && obj.Status != msg.Status.Success) {
           // Do not invoke client.end() here because it prevents showing errors
@@ -259,11 +283,11 @@ export class ProjectEngine {
    * should be evaluated by extension developer team.
    *
    * TODO (kaniadnr@gmail.com): store internal errors in a special
-   * extension log, propose the user to send report to the DVM team
-   * (add appropriate button in error message box).
+   * extension log and crash.report file, propose the user to send report
+   * to the DVM team (add appropriate button in error message box).
    */
   private _internalError(err: Error): void {
-    console.log(err);
+    log.Log.logs[0].write(`${log.Error.internal}: ${err.message}`);
     vscode.window.showErrorMessage(
       `${log.Extension.displayName}: ${log.Error.internal}`);
   }
@@ -278,9 +302,9 @@ export class ProjectEngine {
         vscode.window.showErrorMessage(
           `${log.Extension.displayName} | ${project.prjname}: ${log.Error.general}`);
         break;
-      case msg.Status.Error:
+      case msg.Status.Success:
         vscode.window.showInformationMessage(
-          `${log.Extension.displayName} | ${project.prjname}: ${log.Message.active}`);
+          `${log.Extension.displayName} | ${project.prjname}: ${log.Message.active.replace('{0}', project.prjname)}`);
         break;
     }
     for (let err in diag.Error)
@@ -381,7 +405,8 @@ export class Project {
    * Sends request to a server.
    */
   send(request: any) {
-    this._client.write(JSON.stringify(request) + log.Project.delimiter);
+    if (!this._client.write(JSON.stringify(request) + log.Project.delimiter))
+      this._client.once('drain', () => {this.send(request)});
   }
 
   /**

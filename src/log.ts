@@ -5,10 +5,12 @@
 //===----------------------------------------------------------------------===//
 //
 // This contains constants for the whole extension. Note that some character
-// strings contains {N} substrings which should be replaced with an appropriate
+// strings contains {N} sub-strings which should be replaced with an appropriate
 // value when a constant will be used. For example,
 // console.log(Error.notDirectory.replace('{0}', 'foo'), the output will be
 // 'foo already exists but it is not a directory'.
+//
+// This also contains the Log class to log extension behavior.
 //
 // Do not use here 'vscode' module, only standard Node.js modules can be used.
 //===----------------------------------------------------------------------===//
@@ -16,12 +18,14 @@
 'use strict';
 
 import * as path from 'path';
+import * as fs from 'fs';
 
 export class Extension {
   static displayName = 'TSAR Advisor';
   static url = 'http://dvm-system.org';
   static langauges = {'c' : 'C', 'cpp' : 'C++'};
   static style = path.resolve(__dirname, 'style.css');
+  static log = path.resolve(__dirname, '..', '..', 'log', 'tsar.log');
 }
 
 export class Project {
@@ -48,11 +52,27 @@ export class Error {
   static unknownMessage = 'unknown message has been received {0}';
   static openFile = 'can not open file {0}';
   static unavailable = 'project is unavailable'
+  static openLog = 'can not open log file';
+  static active = 'can not activate analysis session';
 }
 
 export class Message {
-  static active = 'analysis session is active';
+  static createLog = 'log file is created';
+  static extension = 'extension is activated';
+  static active = 'analysis session is active for {0}';
+  static close = 'analysis session is closed for {0}';
   static listening = 'server is listening for connection';
+  static connection = 'connection is successfully established';
+  static stopServer = 'server is stopped with {0} signal';
+  static server = 'response from server {0}';
+  static client = 'request from client {0}';
+}
+
+export class Server {
+  static listening = "listening";
+  static connection = "connection";
+  static error = "error";
+  static data = "data";
 }
 
 export class Terminal {
@@ -61,4 +81,61 @@ export class Terminal {
 
 export class Command {
   static restart = 'Restart Now';
+}
+
+/**
+ * This is a helpful class to log data.
+ *
+ * When constructed this open a specified file in append mode.
+ * All data will be written in format '<date> <data>' where 'date' is a day and
+ * time when 'data' is written.
+ */
+export class Log {
+  /**
+   * This is a storage for logs to share it between different files.
+   */
+  static logs: Log[] = [];
+
+  private _log: fs.WriteStream;
+  private _path: string;
+  private _fd: number;
+
+  /**
+   * Open a specified file in append mode and prepare to log data. In case of
+   * errors this function throws exception.
+   */
+  constructor(path: string) {
+    this._path = path;
+    this._fd = fs.openSync(path, 'a');
+    this._log = fs.createWriteStream(path, {fd: this._fd, flags: 'a'});
+  }
+
+  dispose() {
+    this._log.close();
+  }
+
+  /**
+   * Write '<date> <data>' string in the log file.
+   */
+  write(data: string) {
+
+    let now = new Date;
+    let nowStr = now.toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour12: false,
+      hour: 'numeric',
+      minute: 'numeric',
+      second: 'numeric',
+    });
+    this._write(`${nowStr}:${now.getMilliseconds()} ${data}\n`);
+  }
+
+  private _write(data: string) {
+    if (!this._log.write(data))
+      this._log.once('drain', () => {this._write(data)});
+  }
+
+  get path(): string { return this._path; }
 }
