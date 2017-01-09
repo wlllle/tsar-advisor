@@ -86,7 +86,9 @@ export class Diagnostic {
   Status: Status = Status.Invalid;
 
   toJSON(): DiagnosticJSON {
-    return Object.assign({name: Diagnostic.name}, this);
+    let json:any = Object.assign({name: Diagnostic.name}, this);
+    json.Status = Status[this.Status];
+    return json;
   }
 
   static fromJSON(json: DiagnosticJSON|string) : Diagnostic {
@@ -94,7 +96,9 @@ export class Diagnostic {
       return JSON.parse(json, Diagnostic.reviver);
     } else {
       let obj = Object.create(Diagnostic.prototype);
-      return Object.assign(obj, json);
+      Object.assign(obj, json);
+      obj.Status = Status[json['Status']];
+      return obj;
     }
   }
 
@@ -227,7 +231,7 @@ export interface DiagnosticJSON extends MessageJSON {
   Error: Arguments;
   Warning: Arguments;
   Terminal: string;
-  Status: Status;
+  Status: string;
 }
 
 /**
