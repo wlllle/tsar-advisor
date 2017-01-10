@@ -59,7 +59,7 @@ export class Error {
 export class Message {
   static createLog = 'log file is created';
   static extension = 'extension is activated';
-  static active = 'analysis session is active for {0}';
+  static active = 'analysis session is activated for {0}';
   static close = 'analysis session is closed for {0}';
   static listening = 'server is listening for connection';
   static connection = 'connection is successfully established';
