@@ -201,7 +201,7 @@ export class ProjectEngine {
             project.register(scheme, this._providers[scheme].state());
           this._projects.set(uri.toString(), project);
           client.on('error', (err) => {this._internalError(err)});
-          client.on('data', (data) => {
+          client.on('data', (data:string) => {
             log.Log.logs[0].write(log.Message.server.replace('{0}', data));
           });
           client.on('data', this._onResponse.bind(this, project, client));

@@ -13,8 +13,7 @@
     "preview": true,
     "license": "SEE LICENSE IN LICENSE.txt",
     "engines": {
-      "vscode": "^1.6.0",
-      "node": ">=6.0.0"
+      "vscode": "^1.8.1"
     },
     "categories": [
       "Other"
@@ -59,18 +58,19 @@
     "scripts": {
       "postinstall": "node ./node_modules/vscode/bin/install",
       "prepublish-clean": "rimraf out",
-      "prepublish-ts": "node ./node_modules/vscode/bin/compile",
+      "prepublish-ts": "tsc -p ./",
       "prepublish-css": "catw ./html/*.css > ./out/src/style.css",
       "prepublish-addon": "node ./addon/addon.js -noW ../../dvmhrepo/sapfor/idb/trunk/src/base ../tsar-370/tsar ./out/src",
       "vscode:prepublish": "npm-run-all -n prepublish-clean prepublish-ts prepublish-css prepublish-addon",
-      "watch-ts": "node ./node_modules/vscode/bin/compile -watch -p ./",
+      "watch-ts": "tsc -watch -p ./",
       "watch-css": "catw ./html/*.css -o ./out/src/style.css -v",
       "watch-addon": "node ./addon/addon.js -d ../../dvmhrepo/sapfor/idb/trunk/src/base ../tsar-370/tsar ./out/src",
       "watch": "npm-run-all -c -n -p watch-ts watch-css watch-addon"
     },
     "devDependencies": {
       "typescript": "^2.0.3",
-      "vscode": "^0.11.0",
+      "vscode": "^1.0.0",
+      "@types/node": "^6.0.40",
       "catw": "~0.0.1",
       "copy": "~0.3.0",
       "watch": "~1.0.1",

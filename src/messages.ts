@@ -165,7 +165,7 @@ export interface TraitStatistic {
 export class Statistic {
   Files: {string:number};
   Functions: number;
-  Loops: [number,number];
+  Loops: [number, number];
   Variables: [number, number];
   Traits: TraitStatistic;
 
@@ -192,10 +192,10 @@ export class Statistic {
       for (let key in json)
         if (key != 'Loops' && key != 'Variables')
           obj[key] = json[key];
-      obj.Loops = {};
+      obj.Loops = [undefined, undefined];
       obj.Loops[Analysis.Yes] = json.Loops[Analysis[Analysis.Yes]];
       obj.Loops[Analysis.No] = json.Loops[Analysis[Analysis.No]];
-      obj.Variables = {};
+      obj.Variables = [undefined, undefined];
       obj.Variables[Analysis.Yes] = json.Variables[Analysis[Analysis.Yes]];
       obj.Variables[Analysis.No] = json.Variables[Analysis[Analysis.No]];
       return obj;

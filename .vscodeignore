@@ -1,5 +1,4 @@
 .vscode/**
-typings/**
 out/test/**
 test/**
 src/**
@@ -11,3 +10,4 @@ log/**
 .gitignore
 tsconfig.json
 vsc-extension-quickstart.md
+npm-**
