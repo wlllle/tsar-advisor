@@ -57,8 +57,12 @@
       }
     },
     "scripts": {
-      "vscode:prepublish": "node ./node_modules/vscode/bin/compile",
       "postinstall": "node ./node_modules/vscode/bin/install",
+      "prepublish-clean": "rimraf out",
+      "prepublish-ts": "node ./node_modules/vscode/bin/compile",
+      "prepublish-css": "catw ./html/*.css > ./out/src/style.css",
+      "prepublish-addon": "node ./addon/addon.js -noW ../../dvmhrepo/sapfor/idb/trunk/src/base ../tsar-370/tsar ./out/src",
+      "vscode:prepublish": "npm-run-all -n prepublish-clean prepublish-ts prepublish-css prepublish-addon",
       "watch-ts": "node ./node_modules/vscode/bin/compile -watch -p ./",
       "watch-css": "catw ./html/*.css -o ./out/src/style.css -v",
       "watch-addon": "node ./addon/addon.js -d ../../dvmhrepo/sapfor/idb/trunk/src/base ../tsar-370/tsar ./out/src",
@@ -71,7 +75,8 @@
       "copy": "~0.3.0",
       "watch": "~1.0.1",
       "npm-run-all": "~3.1.2",
-      "node-gyp": "~3.4.0"
+      "node-gyp": "~3.4.0",
+      "rimraf": "~2.5.4"
     },
     "extensionDependencies": [
       "ms-vscode.cpptools"
