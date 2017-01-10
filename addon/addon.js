@@ -29,12 +29,12 @@ let sharedDir = path.resolve(argv.pop());
 let bclDir = path.resolve(argv.pop());
 
 let opt;
-let config;
-let noWatch;
+let config = 'Release';
+let noWatch = false;
 do {
   opt = argv.pop();
-  config = opt == '-d' ? 'Debug' : 'Release';
-  noWatch = opt == '-noW' ? true : false;
+  config = opt == '-d' ? 'Debug' : config;
+  noWatch = opt == '-noW' ? true : noWatch;
 } while (opt);
 
 let addonDir = path.resolve(__dirname, 'build', config);
