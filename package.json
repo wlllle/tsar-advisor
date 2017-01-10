@@ -13,7 +13,7 @@
     "preview": true,
     "license": "SEE LICENSE IN LICENSE.txt",
     "engines": {
-      "vscode": "^1.8.0",
+      "vscode": "^1.6.0",
       "node": ">=6.0.0"
     },
     "categories": [
