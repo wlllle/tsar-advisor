@@ -2,13 +2,15 @@
 const path = require('path');
 
 let help = `
-  addon [-d] <pathToBCL> <pathToShared> <destination>
+  addon [-d|-noW] <pathToBCL> <pathToShared> <destination>
 
   If some changes in sources or libraries occur then this script:
   (1) configure binding.gyp and rebuild addon
   (2) copies addons (*.node files) from ${path.join(__dirname, 'build', '<config>')} to <destination>.
   (3) copies shared libraries (*.dll or *.a files) from ${path.join('<pathToShared>', '<config>')} to <destination>.
   The <config> parameter mentioned above is Debug if -d option is specified, otherwise it is Release.
+
+  In case of -noW watch mode will be disabled.
  `
 
 const watch = require('watch');
@@ -25,7 +27,16 @@ if (argv.find(opt => { return (opt == '--help' || opt == '-h'); })) {
 let dest = path.resolve(argv.pop());
 let sharedDir = path.resolve(argv.pop());
 let bclDir = path.resolve(argv.pop());
-let config = argv.pop() == '-d' ? 'Debug' : 'Release';
+
+let opt;
+let config;
+let noWatch;
+do {
+  opt = argv.pop();
+  config = opt == '-d' ? 'Debug' : 'Release';
+  noWatch = opt == '-noW' ? true : false;
+} while (opt);
+
 let addonDir = path.resolve(__dirname, 'build', config);
 let sharedConfigDir = path.join(sharedDir, config);
 
@@ -79,9 +90,11 @@ function copyAddon() {
 
 // Copy addons to a specified output if they has been changed.
 copyAddon();
-watch.createMonitor(__dirname, (monitor) => {
-  monitor.on("created", (file, stat) => { copyAddon(); });
-});
+if (!noWatch) {
+  watch.createMonitor(__dirname, (monitor) => {
+    monitor.on("created", (file, stat) => { copyAddon(); });
+  });
+}
 
 function copyShared() {
   try {
@@ -134,13 +147,15 @@ function nodeGypExec(cmd, args, cb_stdout, cb_end) {
 // has been changed.
 nodeGypExec();
 copyShared();
-watch.createMonitor(sharedDir, (monitor) => {
-  monitor.on("created", (file, stat) => {
-    nodeGypExec();
-    copyShared();
+if (!noWatch) {
+  watch.createMonitor(sharedDir, (monitor) => {
+    monitor.on("created", (file, stat) => {
+      nodeGypExec();
+      copyShared();
+    });
+    monitor.on("changed", (file, stat) => {
+      nodeGypExec();
+      copyShared();
+    });
   });
-  monitor.on("changed", (file, stat) => {
-    nodeGypExec();
-    copyShared();
-  });
-});
+}
