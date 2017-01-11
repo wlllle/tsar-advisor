@@ -98,7 +98,7 @@ export class ProjectProvider implements ProjectContentProvider{
     let count = 0;
     for (let file in files) {
       count += files[file];
-      html += `<li class="summary-item">${numberHtml(files[file])} ${file}</li>`
+      html += `<li class="summary-item">${numberHtml(files[file])} ${file} ${files[file] !== 1 ? 'files' : 'file'}</li>`
     }
     html += '</ul>';
     html = `<p>Total number of analyzed files is ${numberHtml(count)} including:</p>${html}`;
