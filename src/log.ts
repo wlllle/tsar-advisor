@@ -54,6 +54,8 @@ export class Error {
   static unavailable = 'project is unavailable'
   static openLog = 'can not open log file';
   static active = 'can not activate analysis session';
+  static osIncompatible = 'incompatible type of platform, {0} expected';
+  static environment = 'can not establish environment for compiler';
 }
 
 export class Message {
@@ -66,6 +68,9 @@ export class Message {
   static stopServer = 'server is stopped with {0} signal';
   static server = 'response from server {0}';
   static client = 'request from client {0}';
+  static tryCompilerEnv = 'try to establish environment for compiler: {0}';
+  static environment = 'environment for compiler is established: {0}';
+  static generalEnv = 'general environment';
 }
 
 export class Server {

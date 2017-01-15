@@ -13,6 +13,4 @@ To analyse source code:
 
 At this moment only analysis statistic can be presented.
 
-## Known Issues
 
-Error occurs if sources include files from standard C/C++ library.

@@ -10,7 +10,9 @@
 
 'use strict';
 
+import * as child_process from 'child_process';
 import * as path from 'path';
+import * as fs from 'fs';
 import * as vscode from 'vscode';
 import {Project} from './project';
 import * as log from './log';
@@ -42,6 +44,49 @@ export function decodeLocation(uri: vscode.Uri):
     target === undefined ? undefined : vscode.Uri.parse(target),
     line === undefined || ch === undefined ? undefined : new vscode.Position(line, ch)
   ];
+}
+
+/**
+ * This returns environment key-value pairs which is necessary to compile
+ * sources on Win32 platform. On error this returners 'undefined'.
+ *
+ * This tries to find MS Visual Studio C\C++ compiler with the highest version.
+ */
+export function establishVSEnvironment(onerror: (err: any) => any): any {
+  if (!process.platform.match(/^win/i)) {
+    onerror(new Error(log.Error.osIncompatible.replace('{0}', 'win32')));
+    return undefined;
+  }
+  let versions = [];
+  for (let variable in process.env) {
+    let match = variable.match(/^VS\d+COMNTOOLS$/i);
+    if (!match)
+      continue;
+    versions.push(match[0]);
+  }
+  versions.sort();
+  while(versions.length) {
+    let vsvars = path.resolve(`${process.env[versions.pop()]}`, 'vsvars32.bat');
+    try {
+      if (!fs.existsSync(vsvars))
+        continue;
+      let stat = fs.statSync(vsvars);
+      if (stat.isDirectory())
+        continue;
+      let stdout = child_process.execSync(`"${vsvars}" && set`, {encoding: 'utf8'});
+      let env = stdout.split(/\r?\n/).reduce((prev, curr) => {
+        let pair = curr.split(/=/);
+        if (pair.length == 2)
+          prev[pair[0]] = pair[1];
+        return prev;
+      }, {});
+      return env;
+    }
+    catch(err) {
+      onerror(err);
+    }
+  }
+  return undefined;
 }
 
 /**

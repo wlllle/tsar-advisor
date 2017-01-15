@@ -15,7 +15,7 @@ import * as fs from 'fs';
 import * as net from 'net';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import {encodeLocation, decodeLocation} from './functions';
+import {encodeLocation, decodeLocation, establishVSEnvironment} from './functions';
 import {ProjectProvider} from './general';
 import * as log from './log';
 import * as msg from './messages';
@@ -33,12 +33,37 @@ export class ProjectEngine {
   );
   private _context: vscode.ExtensionContext;
   private _providers = {};
+  private _environment = {};
 
   /**
    * Creates engine is a specified extension context.
    */
   constructor(context: vscode.ExtensionContext) {
     this._context = context;
+    if (!process.platform.match(/^win/i)) {
+      this._environment = process.env;
+      log.Log.logs[0].write(
+        log.Message.environment.replace('{0}', log.Message.generalEnv));
+      return;
+    }
+    this._environment = establishVSEnvironment((err) => {
+      if (err instanceof Error)
+        log.Log.logs[0].write(
+          log.Message.environment.replace('{0}', err.message));
+      else
+        log.Log.logs[0].write(
+          log.Message.environment.replace('{0}', err));
+    });
+    if (this._environment === undefined) {
+      log.Log.logs[0].write(
+        log.Message.environment.replace('{0}', log.Error.environment));
+      vscode.window.showWarningMessage(
+        `${log.Extension.displayName}: ${log.Error.environment}`);
+      this._environment = process.env;
+    } else {
+      log.Log.logs[0].write(
+        log.Message.environment.replace('{0}', `VS version ${this._environment['VisualStudioVersion']}`));
+    }
   }
 
   /**
@@ -101,7 +126,7 @@ export class ProjectEngine {
       let prjDir = this._makeProjectDir(path.dirname(uri.fsPath));
       if (typeof prjDir != 'string')
         return reject(prjDir);
-      this._startServer(uri, prjDir);
+      this._startServer(uri, <string>prjDir, this._environment);
       return undefined;
     })
   }
@@ -174,14 +199,18 @@ export class ProjectEngine {
    * If some errors occur during initialization they will be treated
    * and evaluated as internal errors.
    * Function _onResponse() will be set as listener for responses from server.
+   *
+   * @param env This parameter is used to specified environment of server
+   *  execution.
    */
-  private _startServer(uri: vscode.Uri, prjDir: string) {
+  private _startServer(uri: vscode.Uri, prjDir: string, env: any) {
     const pipe = path.join('\\\\?\\pipe', uri.path, log.Project.pipe);
     // {execArgv: []} disables --debug options otherwise the server.js tries to
     // use the same port as a main process for debugging and will not be run
     // in debug mode
+    let options = {execArgv: [], env: env};
     const server = child_process.fork(
-      path.join(__dirname, 'server.js'), [pipe], {execArgv: []});
+      path.join(__dirname, 'server.js'), [pipe], options);
     server.on('error', (err) => {this._internalError(err)});
     server.on('close', () => {this._stop(uri);});
     server.on('exit', (code, signal) => {
