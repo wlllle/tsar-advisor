@@ -2,7 +2,7 @@
     "name": "tsar-advisor",
     "displayName": "TSAR Advisor",
     "description": "This tool proposes some useful information about a program to simplify its parallelization.",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "publisher": "DVM",
     "homepage": "http://dvm-system.org",
     "keywords": [
@@ -79,7 +79,6 @@
       "rimraf": "~2.5.4"
     },
     "extensionDependencies": [
-      "ms-vscode.cpptools"
     ],
     "dependencies": {
     }
