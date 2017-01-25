@@ -20,8 +20,6 @@ import {ProjectProvider} from './general';
 import * as log from './log';
 import * as msg from './messages';
 
-let extLog = fs.openSync('d:\log.err', 'a');
-
 /**
  * This controls all currently active projects evaluated by the extension.
  */
