@@ -20,32 +20,49 @@
       "cflags": [
         "-std=c++11"
       ],
-      "configurations": {
-        "Debug": {
-          "msvs_settings": {
-            "VCCLCompilerTool": {
-              "RuntimeLibrary": 3
-            },
-            "VCLinkerTool": {
-              "AdditionalLibraryDirectories": [
-                "<@(tsar-build)/Debug/"
+      "conditions": [
+        [
+          "OS=='linux'",
+          {
+            "link_settings": {
+              "libraries": [
+                "-L<@(tsar-build)"
               ]
             }
           }
-        },
-        "Release": {
-          "msvs_settings": {
-            "VCCLCompilerTool": {
-              "RuntimeLibrary": 2
-            },
-            "VCLinkerTool": {
-              "AdditionalLibraryDirectories": [
-                "<@(tsar-build)/Release/"
-              ]
+        ],
+        [
+          "OS=='win'",
+          {
+            "configurations": {
+              "Debug": {
+                "msvs_settings": {
+                  "VCCLCompilerTool": {
+                    "RuntimeLibrary": 3
+                  },
+                  "VCLinkerTool": {
+                    "AdditionalLibraryDirectories": [
+                      "<@(tsar-build)/Debug/"
+                    ]
+                  }
+                }
+              },
+              "Release": {
+                "msvs_settings": {
+                  "VCCLCompilerTool": {
+                    "RuntimeLibrary": 2
+                  },
+                  "VCLinkerTool": {
+                    "AdditionalLibraryDirectories": [
+                      "<@(tsar-build)/Release/"
+                    ]
+                  }
+                }
+              }
             }
           }
-        }
-      }
+        ]
+      ]
     }
   ]
 }

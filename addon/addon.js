@@ -7,7 +7,7 @@ let help = `
   If some changes in sources or libraries occur then this script:
   (1) configure binding.gyp and rebuild addon
   (2) copies addons (*.node files) from ${path.join(__dirname, 'build', '<config>')} to <destination>.
-  (3) copies shared libraries (*.dll or *.a files) from ${path.join('<pathToShared>', '<config>')} to <destination>.
+  (3) copies shared libraries (*.dll or *.so files) from ${path.join('<pathToShared>', '<config>')} to <destination>.
   The <config> parameter mentioned above is Debug if -d option is specified, otherwise it is Release.
 
   In case of -noW watch mode will be disabled.
@@ -45,7 +45,7 @@ try {
   if (!fs.existsSync(dest))
     throw dest + ' directory does not exist';
   if (!fs.existsSync(bclDir))
-    throw dest + ' directory does not exist';
+    throw bclDir + ' directory does not exist';
 }
 catch(err) {
   console.log(__filename + ': ' + err);
@@ -57,7 +57,7 @@ catch(err) {
 try {
   let bf = path.join(__dirname, 'binding.gyp');
   let bindingFile = JSON.parse(fs.readFileSync(bf, 'utf8'));
-  bindingFile.targets[0].variables['bcl'] = bclDir;
+  bindingFile.targets[0].variables['bcl'] = path.relative(__dirname, bclDir);
   bindingFile.targets[0].variables['tsar-build'] = sharedDir;
   fs.writeFileSync(bf, JSON.stringify(bindingFile, "", 2), 'utf8');
   let date = new Date();
@@ -102,7 +102,7 @@ function copyShared() {
       return;
     let cwd = process.cwd();
     process.chdir(sharedConfigDir);
-    copy(['*.dll', '*.a'], dest, (err, files) => {
+    copy(['*.dll', '*.so'], dest, (err, files) => {
       if (err)
         console.log('copy shared libraries: ' + err);
     });
@@ -124,17 +124,16 @@ function nodeGypExec(cmd, args, cb_stdout, cb_end) {
     'rebuild',
     '-C', __dirname,
     '--target=1.4.6',
-    '--arch=ia32',
     '--dist-url=https://atom.io/download/atom-shell'
   ];
   if (config === 'Debug')
     nodeGypArgs.push('-d');
-  if (os == 'win32')
+  if (os == 'win32') {
+    nodeGypArgs.push('--arch=ia32');
     child = spawn('cmd.exe', [ '/c','node-gyp'].concat(nodeGypArgs));
-  else
+  } else {
     child = spawn('node-gyp', nodeGypArgs);
-  //child.stdout.on('data', (data) => {console.log(data);});
-  //child.stderr.on('data', (data) => {console.log(data);});
+  }
   child.on('close', (code) => {
     let date = new Date();
     console.log(`${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}` +

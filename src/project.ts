@@ -189,7 +189,6 @@ export class ProjectEngine {
     }
     return prjDir;
   }
-
   /**
    * Starts server to analyze project and initialize connection between the
    * server and adviser, returns true on success.
@@ -202,7 +201,7 @@ export class ProjectEngine {
    *  execution.
    */
   private _startServer(uri: vscode.Uri, prjDir: string, env: any) {
-    const pipe = path.join('\\\\?\\pipe', uri.path, log.Project.pipe);
+    const pipe = this._pipe(uri);
     // {execArgv: []} disables --debug options otherwise the server.js tries to
     // use the same port as a main process for debugging and will not be run
     // in debug mode
@@ -262,6 +261,19 @@ export class ProjectEngine {
         client.destroy();
       }
     });
+  }
+
+  /**
+   * Returns pipe to exchange messages between client (GUI) and server (TSAR).
+   * TODO (kaniandr@gmail.com): For Linux OS pipe is a file, so check that it
+   * does not exist.
+   */
+  private _pipe(uri: vscode.Uri): string {
+    if (!process.platform.match(/^win/i)) {
+      return `${uri.path}.${log.Project.pipe}`;
+    } else {
+      return path.join('\\\\?\\pipe', uri.path, log.Project.pipe);
+    }
   }
 
   /**
