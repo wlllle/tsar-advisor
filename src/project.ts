@@ -18,6 +18,7 @@ import * as vscode from 'vscode';
 import {encodeLocation, decodeLocation, establishVSEnvironment} from './functions';
 import {ProjectProvider} from './general';
 import * as log from './log';
+import {LoopTreeProvider} from './loopTree';
 import * as msg from './messages';
 
 /**
@@ -27,7 +28,8 @@ export class ProjectEngine {
   private _projects = new Map<string, Project>();
   private _parser = new msg.Parser(
     msg.Diagnostic,
-    msg.Statistic
+    msg.Statistic,
+    msg.FunctionList
   );
   private _context: vscode.ExtensionContext;
   private _providers = {};

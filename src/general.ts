@@ -1,3 +1,4 @@
+
 //===--- general.ts ----------- General Provider ------------ TypeScript --===//
 //
 //                           TSAR Advisor (SAPFOR)
@@ -167,7 +168,11 @@ export class ProjectProvider implements ProjectContentProvider{
           ${this._listOfFiles(stat.Files)}
           <p>
             Analyzed files comprise
-              ${numberHtml(stat.Functions)} ${stat.Functions !== 1 ? 'functions' : 'function'}
+              ${numberHtml(stat.Functions)} ${commandLink(
+                  'tsar.function.list', project,
+                  log.FunctionList.title.replace(
+                    '{0}', path.basename(project.prjname)),
+                  stat.Functions !== 1 ? 'functions' : 'function')}
             with
             ${numberHtml(varCount)} ${varCount !== 1 ? 'variables' : 'variable'}${htmlVarNotAnalyzed}
             and

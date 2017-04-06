@@ -212,6 +212,30 @@ export class Statistic {
 }
 
 /**
+ * This represents list of functions in an analyzed project.
+ */
+export class FunctionList {
+  Functions: string [] = [];
+
+  toJSON(): FunctionListJSON {
+    return Object.assign({name: FunctionList.name}, this);
+  }
+
+  static fromJSON(json: FunctionListJSON|string) : FunctionList {
+    if (typeof json === 'string') {
+      return JSON.parse(json, FunctionList.reviver);
+    } else {
+      let obj = Object.create(FunctionList.prototype);
+      return Object.assign(obj, json);
+    }
+  }
+
+  static reviver(key: string, value: any): any {
+    return key === '' ? FunctionList.fromJSON(value) : value;
+  }
+}
+
+/**
  * JSON representation of a request identifier.
  */
 interface MessageJSON {
@@ -248,3 +272,6 @@ export interface StatisticJSON extends MessageJSON {
   Traits: TraitStatistic;
 }
 
+export interface FunctionListJSON extends MessageJSON {
+  Functions: string [];
+}

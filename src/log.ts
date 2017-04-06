@@ -88,6 +88,10 @@ export class Command {
   static restart = 'Restart Now';
 }
 
+export class FunctionList {
+  static title = 'List of functions in {0}';
+}
+
 export class Summary {
   static title = 'Analysis result summary for {0}';
 }

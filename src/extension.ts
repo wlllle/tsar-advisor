@@ -14,10 +14,14 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as net from 'net';
-import * as msg from './messages';
-import * as log from './log';
-import {ProjectEngine} from './project';
+import {encodeLocation} from './functions';
 import {ProjectProvider} from './general';
+import * as log from './log';
+import {LoopTreeProvider} from './loopTree';
+import * as msg from './messages';
+import {ProjectEngine} from './project';
+
+
 
 /**
  * Open log file (log.Extension.log), returns true on success.
@@ -53,7 +57,8 @@ export function activate(context: vscode.ExtensionContext) {
   log.Log.logs[0].write(log.Message.extension);
   let engine = new ProjectEngine(context);
   engine.register(
-    [ProjectProvider.scheme, new ProjectProvider(engine)]
+    [ProjectProvider.scheme, new ProjectProvider(engine)],
+    [LoopTreeProvider.scheme, new LoopTreeProvider(engine)]
   );
   let start = vscode.commands.registerCommand(
     'tsar.start', (uri:vscode.Uri) => {
@@ -87,5 +92,19 @@ export function activate(context: vscode.ExtensionContext) {
             `${log.Extension.displayName}: ${log.Error.openFile.replace('{0}', uri.fsPath)}`);
         });
     })
-  context.subscriptions.push(start, stop, openProject);
+  let showFuncList = vscode.commands.registerCommand('tsar.function.list',
+    (uri:vscode.Uri) => {
+      let project = engine.project(uri);
+      /// TODO (kaniandr@gmail.com) : check that project is available:
+      ///   if (project === undefined) ...
+      /// TODO (kaniandr@gmail.com) : send request if data is inconsistent only.
+      vscode.commands.executeCommand('vscode.previewHtml',
+          encodeLocation(LoopTreeProvider.scheme, project.uri),
+          vscode.ViewColumn.Two,
+          `${log.Extension.displayName} | ${project.prjname}`)
+        .then((success) => {
+          project.send(new msg.FunctionList);
+        }, null);
+    });
+  context.subscriptions.push(start, stop, openProject, showFuncList);
 }
