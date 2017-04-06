@@ -13,7 +13,8 @@
 import * as path from 'path';
 import * as vscode from 'vscode';
 import {decodeLocation, encodeLocation,
-  projectLink, numberHtml, styleLink} from './functions';
+  projectLink, commandLink, numberHtml, styleLink,
+  unavailableHtml, waitHtml} from './functions';
 import * as log from './log';
 import * as msg from './messages';
 import {ProjectEngine, Project,
@@ -37,7 +38,6 @@ export class ProjectProvider implements ProjectContentProvider{
   static scheme = "tsar-main";
   private _onDidChange = new vscode.EventEmitter<vscode.Uri>();
   private _engine: ProjectEngine;
-  private _response: any;
 
   constructor(engine: ProjectEngine) { this._engine = engine; }
   dispose() { this._onDidChange.dispose(); }
@@ -73,20 +73,19 @@ export class ProjectProvider implements ProjectContentProvider{
     let prjUri = <vscode.Uri>decodeLocation(uri).shift();
     let project = this._engine.project(prjUri);
     if (project === undefined)
-      return this._provideUnavailable(prjUri);
+      return unavailableHtml(prjUri);
     let state = <ProjectProviderState>project.providerState(ProjectProvider.scheme);
     // If there were some responses and they already evaluated then let us
     // evaluate the last one.
-    if (project.response !== undefined)
-      state.response = project.pop();
-    // Prevents asynchronous changes of this._response value.
+    if (project.response !== undefined &&
+        project.response instanceof msg.Statistic)
+      state.response = project.response;
+    // Prevents asynchronous changes of state.response value.
     let response = state.response;
     return new Promise((resolve, reject) => {
-      if (response === undefined || response instanceof msg.Diagnostic)
-        return resolve(this._provideWait(project));
-      if (response instanceof msg.Statistic)
+      if (response !== undefined && response instanceof msg.Statistic)
         return resolve(this._provideStatistic(project, response));
-      return resolve(this._provideWait(project));
+      return resolve(waitHtml(log.Summary.title, project));
     });
   }
 
@@ -149,69 +148,26 @@ export class ProjectProvider implements ProjectContentProvider{
       ' (' +  numberHtml(varNotAnalyzed) + (varNotAnalyzed !==1 ?
         ' variables have' : ' variable has') + ' not been analyzed)';
     return `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          ${styleLink()}
-        </head>
-        <body>
-          <div class="summary-post">
-            <h1> Analysis result summary for ${projectLink(project)} </h1>
-            ${this._listOfFiles(stat.Files)}
-            <p>
-              Analyzed files comprise
-                ${numberHtml(stat.Functions)} ${stat.Functions !== 1 ? 'functions' : 'function'}
-              with
-              ${numberHtml(varCount)} ${varCount !== 1 ? 'variables' : 'variable'}${htmlVarNotAnalyzed}
-              and
-                ${numberHtml(loopCount)} ${loopCount !== 1 ? 'loops' : 'loop'}${htmlLpNotAnalyzed}.
-            </p>
-            ${this._listOfTraits(stat)}
-          </div>
-        </body>
-      </html>`;
-  }
-
-  /**
-   * Provides html for welcome information.
-   */
-  private _provideWait(project: Project): string {
-    return `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          ${styleLink()}
-        </head>
-        <body>
-          <div class="summary-post">
-            <h1> Analysis result summary for ${projectLink(project)} </h1>
-            <p> Please wait while analysis will be finished... </p>
-          </div>
-        </body>
-      </html>`;
-  }
-
-  /**
-   * Provides html in case when analysis results is unavailable.
-   */
-  private _provideUnavailable(uri: vscode.Uri): string {
-    return `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          ${styleLink()}
-        </head>
-        <body>
-          <div class="summary-post">
-            <h1> Sorry, ${log.Error.unavailable} </h1>
-            <p>
-              <a class="source-link"
-                 href="${encodeURI('command:tsar.start?' + JSON.stringify(uri))}">
-                Try to restart...
-              </a>
-            </p>
-          </div>
-        </body>
-      </html>`;
+    <!DOCTYPE html>
+    <html>
+      <head>
+        ${styleLink()}
+      </head>
+      <body>
+        <div class="summary-post">
+          <h1> Analysis result summary for ${projectLink(project)} </h1>
+          ${this._listOfFiles(stat.Files)}
+          <p>
+            Analyzed files comprise
+              ${numberHtml(stat.Functions)} ${stat.Functions !== 1 ? 'functions' : 'function'}
+            with
+            ${numberHtml(varCount)} ${varCount !== 1 ? 'variables' : 'variable'}${htmlVarNotAnalyzed}
+            and
+              ${numberHtml(loopCount)} ${loopCount !== 1 ? 'loops' : 'loop'}${htmlLpNotAnalyzed}.
+          </p>
+          ${this._listOfTraits(stat)}
+        </div>
+      </body>
+    </html>`;
   }
 }

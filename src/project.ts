@@ -302,7 +302,7 @@ export class ProjectEngine {
         let obj = this._parser.fromJSON(data);
         if (!obj)
           throw new Error(log.Error.unknownResponse.replace('{0}', data));
-        project.update(ProjectProvider.scheme, obj);
+        project.update(obj);
         if (obj instanceof msg.Diagnostic && obj.Status != msg.Status.Success) {
           // Do not invoke client.end() here because it prevents showing errors
           // in output channel project.output.
@@ -470,13 +470,31 @@ export class Project {
    * Updates provider with a specified scheme.
    *
    * The specified response will be stored in a queue of response and can be
-   * accessed via response() getter.
+   * accessed via response() getter from provider.
+   * After execution of ProjectProvider::update() method the response will
+   * be popped out. Consider this in case of asyncronous update() method.
    */
-  update(scheme: string, response: any) {
+  updateProvider(scheme: string, response: any) {
     this._responses.push(response);
     let state = this.providerState(scheme);
     if (state)
       state.provider.update(this);
+    this._pop();
+  }
+
+  /**
+   * Updates all registered providers.
+   *
+   * The specified response will be stored in a queue of response and can be
+   * accessed via response() getter from provider.
+   * After execution of ProjectProvider::update() methods for each provider
+   * the response will be popped out. Consider this in case of asyncronous
+   * update() method.
+   */
+  update(response: any) {
+    this._responses.push(response);
+    this._providers.forEach(state => {state.provider.update(this)});
+    this._pop();
   }
 
   /**
@@ -484,15 +502,6 @@ export class Project {
    * and other are new responses.
    */
   responseNumber(): number { return this._responses.length; }
-
-  /**
-   * Extract the first response which has not been evaluated yet from a response
-   * queue.
-   */
-  pop(): any|undefined  {
-    if (this._newResponse < this._responses.length)
-      return this._responses[this._newResponse++];
-  }
 
   /**
    * Returns project unique identifier.
@@ -522,4 +531,13 @@ export class Project {
    * Returns output channel to represent terminal output.
    */
   get output(): vscode.OutputChannel {return this._output;}
+
+  /**
+   * Extract the first response which has not been evaluated yet from a response
+   * queue.
+   */
+  private _pop(): any|undefined  {
+    if (this._newResponse < this._responses.length)
+      return this._responses[this._newResponse++];
+  }
 }

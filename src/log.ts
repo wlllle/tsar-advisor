@@ -88,6 +88,10 @@ export class Command {
   static restart = 'Restart Now';
 }
 
+export class Summary {
+  static title = 'Analysis result summary for {0}';
+}
+
 /**
  * This is a helpful class to log data.
  *

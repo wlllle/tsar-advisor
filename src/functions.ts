@@ -90,16 +90,30 @@ export function establishVSEnvironment(onerror: (err: any) => any): any {
 }
 
 /**
- * Returns html representation of a link to a project.
+ * Returns html representation of a link which invokes a specified command.
+ *
+ * TODO (kaniandr@gmail.com): add arguments to specify parameters of a command.
  */
-export function projectLink(project: Project): string {
+export function commandLink(
+    command: string, project: Project, title: string, body: string): string {
   return `
     <a class="source-link"
-       href="${encodeURI('command:tsar.open-project?' + JSON.stringify(project.uri))}"
-       title=${project.uri.fsPath}>
-      ${path.basename(project.prjname)}
+       href="${encodeURI(
+         'command:' + command + '?' + JSON.stringify(project.uri))}"
+       title="${title}">
+      ${body}
     </a>`;
-  }
+}
+
+/**
+ * Returns html representation of a link to a project.
+ *
+ * This link invokes a command 'tsar.open-project'.
+ */
+export function projectLink(project: Project): string {
+  return commandLink('tsar.open-project', project,
+   project.uri.fsPath, path.basename(project.prjname));
+}
 
 /**
  * Returns html representation of a number.
@@ -115,3 +129,45 @@ export function styleLink(): string {
   return `<link href= ${vscode.Uri.file(log.Extension.style)} rel="stylesheet" type="text/css"/>`;
 }
 
+/**
+ * Provides html in case when analysis results is unavailable.
+ */
+export function unavailableHtml(uri: vscode.Uri): string {
+  return `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        ${styleLink()}
+      </head>
+      <body>
+        <div class="summary-post">
+          <h1> Sorry, ${log.Error.unavailable} </h1>
+          <p>
+            <a class="source-link"
+                href="${encodeURI('command:tsar.start?' + JSON.stringify(uri))}">
+              Try to restart...
+            </a>
+          </p>
+        </div>
+      </body>
+    </html>`;
+}
+
+/**
+ * Provides html for welcome information.
+ */
+export function waitHtml(title: string, project: Project): string {
+  return `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        ${styleLink()}
+      </head>
+      <body>
+        <div class="summary-post">
+          <h1> ${title.replace('{0}', projectLink(project))} </h1>
+          <p> Please wait while analysis will be finished... </p>
+        </div>
+      </body>
+    </html>`;
+}
