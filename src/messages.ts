@@ -214,8 +214,21 @@ export class Statistic {
 /**
  * This represents list of functions in an analyzed project.
  */
+export interface MainLoopInfo {
+  StartCol: number;
+  StartLine: number;
+  EndCol: number;
+  EndLine: number;
+  Level: number;
+}
+
+export interface MainFuncInfo {
+  Name: string;
+  Loops: MainLoopInfo [];
+}
+
 export class FunctionList {
-  Functions: string [] = [];
+  Functions: MainFuncInfo [] = [];
 
   toJSON(): FunctionListJSON {
     return Object.assign({name: FunctionList.name}, this);
@@ -273,5 +286,5 @@ export interface StatisticJSON extends MessageJSON {
 }
 
 export interface FunctionListJSON extends MessageJSON {
-  Functions: string [];
+  Functions: MainFuncInfo [];
 }
