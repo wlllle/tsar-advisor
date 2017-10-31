@@ -29,7 +29,8 @@ export class ProjectEngine {
   private _parser = new msg.Parser(
     msg.Diagnostic,
     msg.Statistic,
-    msg.FunctionList
+    msg.FunctionList,
+    msg.LoopTree
   );
   private _context: vscode.ExtensionContext;
   private _providers = {};

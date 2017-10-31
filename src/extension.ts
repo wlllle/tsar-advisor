@@ -106,5 +106,21 @@ export function activate(context: vscode.ExtensionContext) {
           project.send(new msg.FunctionList);
         }, null);
     });
-  context.subscriptions.push(start, stop, openProject, showFuncList);
+  let showLoopTree = vscode.commands.registerCommand('tsar.loop.tree',
+    (uri:vscode.Uri) => {
+      let project = engine.project(uri);
+
+
+
+      vscode.commands.executeCommand('vscode.previewHtml',
+          encodeLocation(LoopTreeProvider.scheme, project.uri),
+          vscode.ViewColumn.Two,
+          `${log.Extension.displayName} | ${project.prjname}`)
+        .then((success) => {
+          let looptree = new msg.LoopTree;
+          looptree.ID = Number(uri.query);
+          project.send(looptree);
+        })
+    })
+  context.subscriptions.push(start, stop, openProject, showFuncList, showLoopTree);
 }

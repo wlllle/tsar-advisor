@@ -172,7 +172,7 @@ export class ProjectProvider implements ProjectContentProvider{
                   'tsar.function.list', project,
                   log.FunctionList.title.replace(
                     '{0}', path.basename(project.prjname)),
-                  stat.Functions !== 1 ? 'functions' : 'function')}
+                  stat.Functions !== 1 ? 'functions' : 'function', '')}
             with
             ${numberHtml(varCount)} ${varCount !== 1 ? 'variables' : 'variable'}${htmlVarNotAnalyzed}
             and

@@ -2,7 +2,7 @@
 
 import * as vscode from 'vscode';
 import {decodeLocation, encodeLocation,
-  projectLink, numberHtml, styleLink,
+  projectLink, commandLink, numberHtml, styleLink,
   unavailableHtml, waitHtml} from './functions';
 import * as log from './log';
 import * as msg from './messages';
@@ -67,34 +67,52 @@ export class LoopTreeProvider implements ProjectContentProvider{
     if (project.response !== undefined &&
         project.response instanceof msg.FunctionList)
       state.response = project.response;
-    let response = state.response;
+    let response = project.response;
     return new Promise((resolve, reject) => {
-      if (response !== undefined && response instanceof msg.FunctionList)
+      if (response !== undefined && response instanceof msg.FunctionList) {
         return resolve(this._provideFunctionList(project, response));
+      } else if (response !== undefined && response instanceof msg.LoopTree) {
+        return resolve(this._provideLoopTree(project, response));
+      }
       return resolve(waitHtml(log.FunctionList.title, project));
     });
   }
 
   private _provideFunctionList(project: Project, funclst: msg.FunctionList): string {
-    let result = `<!DOCTYPE html><html>`;
+    let result = `<!DOCTYPE html><html><head>${styleLink()}</head><body>`;
     result += `<table><tr><th>Functions and Loops</th><th>Level</th></tr>`
     let funclen = funclst.Functions.length;
     for (let i = 0; i < funclen; i++) {
       let func = funclst.Functions[i];
-      let loopslen = func.Loops.length;
-      result += `<tr><td>${func.Name}</th><td>0</td></tr>`;
-      for (let j = 0; j < loopslen; j++) {
+      let looplen = func.Loops.length;
+      if (looplen) {
+        result += `<tr><td>${commandLink('tsar.loop.tree', project, 'Loops', '-', `${func.ID}`)}${func.Name}</th><td>0</td></tr>`;
+      } else {
+        result += `<tr><td>${commandLink('tsar.loop.tree', project, 'Loops', '+', `${func.ID}`)}${func.Name}</th><td>0</td></tr>`;
+      }
+      for (let j = 0; j < looplen; j++) {
         let loop = func.Loops[j];
-        result += `<tr><td>`
+        result += `<tr><td>`;
         for (let k = 0; k < loop.Level; k++) {
-          result += `&ensp;`;
+          result += `&emsp;`;
         }
-        result += `loop in ${func.Name} at ${loop.StartLine}:${loop.StartCol}-${loop.EndLine}:${loop.EndCol}</td>`;
-        result += `<td>${loop.Level}</td></tr>`;
+        result += `loop in ${func.Name} at ${loop.StartLine}:${loop.StartCol}-${loop.EndLine}:${loop.EndCol}</td><td>${loop.Level}</td></tr>`;
       }
     }
-    result += `</table>`;
-    result += `</html>`;
+    result += `</table></body></html>`;
     return result;
+  }
+
+  private _provideLoopTree(project: Project, func: msg.LoopTree): string {
+    let state = <LoopTreeProviderState>project.providerState(LoopTreeProvider.scheme);
+    let funclist: msg.FunctionList = state.response;
+    let funclen = funclist.Functions.length;
+    for (let i = 0; i < funclen; i++) {
+      if (funclist.Functions[i].ID != func.ID)
+        continue;
+      funclist.Functions[i].Loops = func.Loops;
+      return this._provideFunctionList(project, funclist);
+    }
+    return `<!DOCTYPE html><html></html>`;
   }
 }

@@ -95,7 +95,8 @@ export function establishVSEnvironment(onerror: (err: any) => any): any {
  * TODO (kaniandr@gmail.com): add arguments to specify parameters of a command.
  */
 export function commandLink(
-    command: string, project: Project, title: string, body: string): string {
+    command: string, project: Project, title: string, body: string, query: string): string {
+      project.uri.query = query;
   return `
     <a class="source-link"
        href="${encodeURI(
@@ -112,7 +113,7 @@ export function commandLink(
  */
 export function projectLink(project: Project): string {
   return commandLink('tsar.open-project', project,
-   project.uri.fsPath, path.basename(project.prjname));
+   project.uri.fsPath, path.basename(project.prjname), '');
 }
 
 /**

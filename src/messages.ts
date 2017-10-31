@@ -222,7 +222,30 @@ export interface MainLoopInfo {
   Level: number;
 }
 
+export class LoopTree {
+  ID: number;
+  Loops: MainLoopInfo [] = [];
+
+  toJSON(): LoopTreeJSON {
+    return Object.assign({name: LoopTree.name}, this);
+  }
+
+  static fromJSON(json: LoopTreeJSON|string) : LoopTree {
+    if (typeof json === 'string') {
+      return JSON.parse(json, LoopTree.reviver);
+    } else {
+      let obj = Object.create(LoopTree.prototype);
+      return Object.assign(obj, json);
+    }
+  }
+
+  static reviver(key: string, value: any): any {
+    return key === '' ? LoopTree.fromJSON(value) : value;
+  }
+}
+
 export interface MainFuncInfo {
+  ID: number;
   Name: string;
   Loops: MainLoopInfo [];
 }
@@ -287,4 +310,9 @@ export interface StatisticJSON extends MessageJSON {
 
 export interface FunctionListJSON extends MessageJSON {
   Functions: MainFuncInfo [];
+}
+
+export interface LoopTreeJSON extends MessageJSON {
+  ID: number;
+  Loops: MainLoopInfo [];
 }
