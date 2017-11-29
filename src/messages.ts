@@ -211,14 +211,16 @@ export class Statistic {
   }
 }
 
-/**
- * This represents list of functions in an analyzed project.
- */
+export interface Location {
+  Line: number;
+  Column: number;
+  MacroLine: number;
+  MacroColumn: number;
+}
+
 export interface MainLoopInfo {
-  StartCol: number;
-  StartLine: number;
-  EndCol: number;
-  EndLine: number;
+  StartLocation: Location;
+  EndLocation: Location;
   Level: number;
 }
 

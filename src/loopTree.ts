@@ -96,7 +96,16 @@ export class LoopTreeProvider implements ProjectContentProvider{
         for (let k = 0; k < loop.Level; k++) {
           result += `&emsp;`;
         }
-        result += `loop in ${func.Name} at ${loop.StartLine}:${loop.StartCol}-${loop.EndLine}:${loop.EndCol}</td><td>${loop.Level}</td></tr>`;
+        if ((loop.StartLocation.Line == loop.StartLocation.MacroLine) &&
+            (loop.StartLocation.Column == loop.StartLocation.MacroColumn)) {
+          result += `loop in ${func.Name} at ${loop.StartLocation.Line}:${loop.StartLocation.Column}
+              - ${loop.EndLocation.Line}:${loop.EndLocation.Column}</td><td>${loop.Level}</td></tr>`;
+        } else {
+          result += `loop in ${func.Name} at ${loop.StartLocation.Line}:${loop.StartLocation.Column}
+              (${loop.StartLocation.MacroLine}:${loop.StartLocation.MacroColumn})
+              - ${loop.EndLocation.Line}:${loop.EndLocation.Column}
+              (${loop.EndLocation.MacroLine}:${loop.EndLocation.MacroColumn})</td><td>${loop.Level}</td></tr>`;
+        }
       }
     }
     result += `</table></body></html>`;
