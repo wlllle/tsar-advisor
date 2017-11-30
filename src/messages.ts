@@ -219,6 +219,7 @@ export interface Location {
 }
 
 export interface MainLoopInfo {
+  ID: number; 
   StartLocation: Location;
   EndLocation: Location;
   Level: number;
