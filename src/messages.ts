@@ -218,10 +218,17 @@ export interface Location {
   MacroColumn: number;
 }
 
+export interface TraitsLoops {
+  IsAnalyzed: string;
+  Perfect: string;
+  Exit: string;
+}
+
 export interface MainLoopInfo {
   ID: number; 
   StartLocation: Location;
   EndLocation: Location;
+  Traits: TraitsLoops;
   Level: number;
 }
 

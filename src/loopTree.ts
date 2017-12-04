@@ -105,15 +105,17 @@ export class LoopTreeProvider implements ProjectContentProvider{
       </html>`
     let body =
       `   <table class="table table-hover">
-            <tr><th>Functions and Loops</th><th>Level</th></tr>`;
+            <tr><th>Functions and Loops</th><th>Is Analyzed</th><th>Perfect</th><th>Exit</th><th>Level</th></tr>`;
     let funclen = funclst.Functions.length;
     for (let i = 0; i < funclen; i++) {
       let func = funclst.Functions[i];
       let looplen = func.Loops.length;
       if (looplen) {
-        body += `<tr><td>${commandLink('tsar.loop.tree', project, 'Loops', '-', `${func.ID}`)}${func.Name}</th><td>0</td></tr>`;
+        body += `<tr><td>${commandLink('tsar.loop.tree', project, 'Loops', '-', `${func.ID}`)}${func.Name}</td>
+            <td>&#10003</td><td>N/A</td><td>N/A</td><td>0</td></tr>`;
       } else {
-        body += `<tr><td>${commandLink('tsar.loop.tree', project, 'Loops', '+', `${func.ID}`)}${func.Name}</th><td>0</td></tr>`;
+        body += `<tr><td>${commandLink('tsar.loop.tree', project, 'Loops', '+', `${func.ID}`)}${func.Name}</td>
+            <td>&#10003</td><td>N/A</td><td>N/A</td><td>0</td></tr>`;
       }
       for (let j = 0; j < looplen; j++) {
         let loop = func.Loops[j];
@@ -124,13 +126,29 @@ export class LoopTreeProvider implements ProjectContentProvider{
         if ((loop.StartLocation.Line == loop.StartLocation.MacroLine) &&
             (loop.StartLocation.Column == loop.StartLocation.MacroColumn)) {
           body += `loop in ${func.Name} at ${loop.StartLocation.Line}:${loop.StartLocation.Column}
-              - ${loop.EndLocation.Line}:${loop.EndLocation.Column}</td><td>${loop.Level}</td></tr>`;
+              - ${loop.EndLocation.Line}:${loop.EndLocation.Column}</td>`;
         } else {
           body += `loop in ${func.Name} at ${loop.StartLocation.Line}:${loop.StartLocation.Column}
               (${loop.StartLocation.MacroLine}:${loop.StartLocation.MacroColumn})
               - ${loop.EndLocation.Line}:${loop.EndLocation.Column}
-              (${loop.EndLocation.MacroLine}:${loop.EndLocation.MacroColumn})</td><td>${loop.Level}</td></tr>`;
+              (${loop.EndLocation.MacroLine}:${loop.EndLocation.MacroColumn})</td>`;
         }
+        if (loop.Traits.IsAnalyzed == "Yes") {
+          body += `<td>&#10003;</td>`;
+        } else {
+          body += `<td>&minus;</td>`;
+        }
+        if (loop.Traits.Perfect == "Yes") {
+          body += `<td>&#10003;</td>`;
+        } else {
+          body += `<td>&minus;</td>`;
+        }
+        if (loop.Traits.Exit == "Yes") {
+          body += `<td>&#10003;</td>`;
+        } else {
+          body += `<td>&minus;</td>`;
+        }
+        body += `<td>${loop.Level}</td></tr>`;
       }
     }
     body += `</table>`;
