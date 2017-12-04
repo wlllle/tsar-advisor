@@ -1,6 +1,7 @@
 'use strict'
 
 import * as vscode from 'vscode';
+import * as path from 'path';
 import {decodeLocation, encodeLocation,
   projectLink, commandLink, numberHtml, styleLink,
   unavailableHtml, waitHtml} from './functions';
@@ -79,37 +80,61 @@ export class LoopTreeProvider implements ProjectContentProvider{
   }
 
   private _provideFunctionList(project: Project, funclst: msg.FunctionList): string {
-    let result = `<!DOCTYPE html><html><head>${styleLink()}</head><body>`;
-    result += `<table><tr><th>Functions and Loops</th><th>Level</th></tr>`
+    //let result = `<!DOCTYPE html><html><head>${styleLink()}</head><body>`;
+    //result += `<table><tr><th>Functions and Loops</th><th>Level</th></tr>`;
+    let bootstrap = vscode.Uri.file(
+      path.resolve(__dirname, '..', '..', 'node_modules', 'bootstrap', 'dist'));
+    let jquery = vscode.Uri.file(
+      path.resolve(__dirname, '..', '..', 'node_modules', 'jquery', 'dist'));
+    let bootstrapHeader =
+      `<!DOCTYPE html>
+      <html lang="en">
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1">
+          <meta name="description" content="">
+          <meta name="author" content="">
+          <title>Functions and Loop Tree</title>
+          <link href="${bootstrap}/css/bootstrap.min.css" rel="stylesheet">
+        </head>
+        <body>`;
+    let bootstrapFooter =
+      `   <script src="${jquery}/jquery.min.js"></script>
+          <script src="${bootstrap}/js/bootstrap.min.js"></script>
+        </body>
+      </html>`
+    let body =
+      `   <table class="table table-hover">
+            <tr><th>Functions and Loops</th><th>Level</th></tr>`;
     let funclen = funclst.Functions.length;
     for (let i = 0; i < funclen; i++) {
       let func = funclst.Functions[i];
       let looplen = func.Loops.length;
       if (looplen) {
-        result += `<tr><td>${commandLink('tsar.loop.tree', project, 'Loops', '-', `${func.ID}`)}${func.Name}</th><td>0</td></tr>`;
+        body += `<tr><td>${commandLink('tsar.loop.tree', project, 'Loops', '-', `${func.ID}`)}${func.Name}</th><td>0</td></tr>`;
       } else {
-        result += `<tr><td>${commandLink('tsar.loop.tree', project, 'Loops', '+', `${func.ID}`)}${func.Name}</th><td>0</td></tr>`;
+        body += `<tr><td>${commandLink('tsar.loop.tree', project, 'Loops', '+', `${func.ID}`)}${func.Name}</th><td>0</td></tr>`;
       }
       for (let j = 0; j < looplen; j++) {
         let loop = func.Loops[j];
-        result += `<tr><td>`;
+        body += `<tr><td>`;
         for (let k = 0; k < loop.Level; k++) {
-          result += `&emsp;`;
+          body += `&emsp;`;
         }
         if ((loop.StartLocation.Line == loop.StartLocation.MacroLine) &&
             (loop.StartLocation.Column == loop.StartLocation.MacroColumn)) {
-          result += `loop in ${func.Name} at ${loop.StartLocation.Line}:${loop.StartLocation.Column}
+          body += `loop in ${func.Name} at ${loop.StartLocation.Line}:${loop.StartLocation.Column}
               - ${loop.EndLocation.Line}:${loop.EndLocation.Column}</td><td>${loop.Level}</td></tr>`;
         } else {
-          result += `loop in ${func.Name} at ${loop.StartLocation.Line}:${loop.StartLocation.Column}
+          body += `loop in ${func.Name} at ${loop.StartLocation.Line}:${loop.StartLocation.Column}
               (${loop.StartLocation.MacroLine}:${loop.StartLocation.MacroColumn})
               - ${loop.EndLocation.Line}:${loop.EndLocation.Column}
               (${loop.EndLocation.MacroLine}:${loop.EndLocation.MacroColumn})</td><td>${loop.Level}</td></tr>`;
         }
       }
     }
-    result += `</table></body></html>`;
-    return result;
+    body += `</table>`;
+    return bootstrapHeader + body + bootstrapFooter;
   }
 
   private _provideLoopTree(project: Project, func: msg.LoopTree): string {
