@@ -230,6 +230,7 @@ export interface MainLoopInfo {
   EndLocation: Location;
   Traits: TraitsLoops;
   Level: number;
+  Type: string;
 }
 
 export class LoopTree {
