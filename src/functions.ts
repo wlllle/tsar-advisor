@@ -172,3 +172,11 @@ export function waitHtml(title: string, project: Project): string {
       </body>
     </html>`;
 }
+
+export function checkTrait(trait: string): string {
+  if (trait == "Yes") {
+    return `<td>&#10003;</td>`;
+  } else {
+    return `<td>&minus;</td>`;
+  }
+}

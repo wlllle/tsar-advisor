@@ -4,7 +4,7 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import {decodeLocation, encodeLocation,
   projectLink, commandLink, numberHtml, styleLink,
-  unavailableHtml, waitHtml} from './functions';
+  unavailableHtml, waitHtml, checkTrait} from './functions';
 import * as log from './log';
 import * as msg from './messages';
 import {ProjectEngine, Project,
@@ -112,17 +112,12 @@ export class LoopTreeProvider implements ProjectContentProvider{
       let func = funclst.Functions[i];
       let looplen = func.Loops.length;
       if (looplen) {
-        body += `<tr><td>${commandLink('tsar.loop.tree', project, 'Loops', '-', `${func.ID}`)}${func.Name}</td>
-            <td>&#10003</td><td>N/A</td><td>N/A</td><td>0</td><td>N/A</td>`;
+        body += `<tr><td>${commandLink('tsar.loop.tree', project, 'Loops', '-', `${func.ID}`)}${func.Name}</td>`;
       } else {
-        body += `<tr><td>${commandLink('tsar.loop.tree', project, 'Loops', '+', `${func.ID}`)}${func.Name}</td>
-            <td>&#10003</td><td>N/A</td><td>N/A</td><td>0</td><td>N/A</td>`;
+        body += `<tr><td>${commandLink('tsar.loop.tree', project, 'Loops', '+', `${func.ID}`)}${func.Name}</td>`;
       }
-      if (func.Traits.Readonly == "Yes") {
-        body += `<td>&#10003;</td></tr>`;
-      } else {
-        body += `<td>&minus;</td></tr>`;
-      }
+      body += `<td>&#10003</td><td>N/A</td><td>N/A</td><td>0</td><td>N/A</td>` +
+          checkTrait(func.Traits.Readonly) + `</tr>`;
       for (let j = 0; j < looplen; j++) {
         let loop = func.Loops[j];
         body += `<tr><td>`;
@@ -139,22 +134,8 @@ export class LoopTreeProvider implements ProjectContentProvider{
               - ${loop.EndLocation.Line}:${loop.EndLocation.Column}
               (${loop.EndLocation.MacroLine}:${loop.EndLocation.MacroColumn})</td>`;
         }
-        if (loop.Traits.IsAnalyzed == "Yes") {
-          body += `<td>&#10003;</td>`;
-        } else {
-          body += `<td>&minus;</td>`;
-        }
-        if (loop.Traits.Perfect == "Yes") {
-          body += `<td>&#10003;</td>`;
-        } else {
-          body += `<td>&minus;</td>`;
-        }
-        if (loop.Traits.Exit == "Yes") {
-          body += `<td>&#10003;</td>`;
-        } else {
-          body += `<td>&minus;</td>`;
-        }
-        body += `<td>${loop.Level}</td><td>${loop.Type}</td><td>N/A</td></tr>`;
+        body += checkTrait(loop.Traits.IsAnalyzed) + checkTrait(loop.Traits.Perfect) + checkTrait(loop.Traits.Exit) +
+            `<td>${loop.Level}</td><td>${loop.Type}</td><td>N/A</td></tr>`;
       }
     }
     body += `</table>`;
@@ -168,6 +149,10 @@ export class LoopTreeProvider implements ProjectContentProvider{
     for (let i = 0; i < funclen; i++) {
       if (funclist.Functions[i].ID != func.ID)
         continue;
+      if (funclist.Functions[i].Loops.length) {
+        funclist.Functions[i].Loops = [];
+        return this._provideFunctionList(project, funclist);
+      }
       funclist.Functions[i].Loops = func.Loops;
       return this._provideFunctionList(project, funclist);
     }
