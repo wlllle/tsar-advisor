@@ -257,6 +257,7 @@ export class LoopTree {
 
 export interface TraitsFunc {
   Readonly: string;
+  NoReturn: string;
 }
 
 export interface MainFuncInfo {

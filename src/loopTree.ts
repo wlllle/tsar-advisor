@@ -105,8 +105,8 @@ export class LoopTreeProvider implements ProjectContentProvider{
       </html>`
     let body =
       `   <table class="table table-hover">
-            <tr><th>Functions and Loops</th><th>Is Analyzed</th><th>Perfect</th>
-            <th>Exit</th><th>Level</th><th>Type</th><th>Readonly</th></tr>`;
+            <tr><th>Functions and Loops</th><th>Is Analyzed</th><th>Perfect</th><th>Exit</th>
+            <th>Level</th><th>Type</th><th>Readonly</th><th>NoReturn</th></tr>`;
     let funclen = funclst.Functions.length;
     for (let i = 0; i < funclen; i++) {
       let func = funclst.Functions[i];
@@ -117,7 +117,7 @@ export class LoopTreeProvider implements ProjectContentProvider{
         body += `<tr><td>${commandLink('tsar.loop.tree', project, 'Loops', '+', `${func.ID}`)}${func.Name}</td>`;
       }
       body += `<td>&#10003</td><td>N/A</td><td>N/A</td><td>0</td><td>N/A</td>` +
-          checkTrait(func.Traits.Readonly) + `</tr>`;
+          checkTrait(func.Traits.Readonly) + checkTrait(func.Traits.NoReturn) + `</tr>`;
       for (let j = 0; j < looplen; j++) {
         let loop = func.Loops[j];
         body += `<tr><td>`;
@@ -140,7 +140,7 @@ export class LoopTreeProvider implements ProjectContentProvider{
         } else {
           body += `<td>N/A</td><td>N/A</td>`;
         }
-        body += `<td>${loop.Level}</td><td>${loop.Type}</td><td>N/A</td></tr>`;
+        body += `<td>${loop.Level}</td><td>${loop.Type}</td><td>N/A</td><td>N/A</td></tr>`;
       }
     }
     body += `</table>`;
