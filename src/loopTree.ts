@@ -134,8 +134,13 @@ export class LoopTreeProvider implements ProjectContentProvider{
               - ${loop.EndLocation.Line}:${loop.EndLocation.Column}
               (${loop.EndLocation.MacroLine}:${loop.EndLocation.MacroColumn})</td>`;
         }
-        body += checkTrait(loop.Traits.IsAnalyzed) + checkTrait(loop.Traits.Perfect) + checkTrait(loop.Traits.Exit) +
-            `<td>${loop.Level}</td><td>${loop.Type}</td><td>N/A</td></tr>`;
+        body += checkTrait(loop.Traits.IsAnalyzed);
+        if (loop.Traits.IsAnalyzed == "Yes") {
+          body += checkTrait(loop.Traits.Perfect) + `<td>${loop.Exit}</td>`;
+        } else {
+          body += `<td>N/A</td><td>N/A</td>`;
+        }
+        body += `<td>${loop.Level}</td><td>${loop.Type}</td><td>N/A</td></tr>`;
       }
     }
     body += `</table>`;

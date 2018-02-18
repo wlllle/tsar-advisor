@@ -221,7 +221,6 @@ export interface Location {
 export interface TraitsLoops {
   IsAnalyzed: string;
   Perfect: string;
-  Exit: string;
 }
 
 export interface MainLoopInfo {
@@ -229,6 +228,7 @@ export interface MainLoopInfo {
   StartLocation: Location;
   EndLocation: Location;
   Traits: TraitsLoops;
+  Exit: number;
   Level: number;
   Type: string;
 }
