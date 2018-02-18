@@ -255,10 +255,15 @@ export class LoopTree {
   }
 }
 
+export interface TraitsFunc {
+  Readonly: string;
+}
+
 export interface MainFuncInfo {
   ID: number;
   Name: string;
   Loops: MainLoopInfo [];
+  Traits: TraitsFunc;
 }
 
 export class FunctionList {
