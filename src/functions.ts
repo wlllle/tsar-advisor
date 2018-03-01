@@ -112,7 +112,12 @@ export function commandLink(
  */
 export function projectLink(project: Project): string {
   return commandLink('tsar.open-project', project,
-   project.uri.fsPath, path.basename(project.prjname), '');
+      project.uri.fsPath, path.basename(project.prjname), '');
+}
+
+export function moveToCode(project: Project, body: string, query: string) {
+  return commandLink('tsar.open-project', project,
+      'Move to code', body, query);
 }
 
 /**

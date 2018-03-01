@@ -3,7 +3,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import {decodeLocation, encodeLocation,
-  projectLink, commandLink, numberHtml, styleLink,
+  projectLink, moveToCode, commandLink, numberHtml, styleLink,
   unavailableHtml, waitHtml, checkTrait} from './functions';
 import * as log from './log';
 import * as msg from './messages';
@@ -132,13 +132,21 @@ export class LoopTreeProvider implements ProjectContentProvider{
         body += `<a href='' class='loops'></a>`;
         if ((loop.StartLocation.Line == loop.StartLocation.MacroLine) &&
             (loop.StartLocation.Column == loop.StartLocation.MacroColumn)) {
-          body += `loop in ${func.Name} at ${loop.StartLocation.Line}:${loop.StartLocation.Column}
-              - ${loop.EndLocation.Line}:${loop.EndLocation.Column}</td>`;
+          let start = `${loop.StartLocation.Line}:${loop.StartLocation.Column}`;
+          let end = `${loop.EndLocation.Line}:${loop.EndLocation.Column}`;
+          body += `loop in ${func.Name} at
+              ${moveToCode(project, start, start)} -
+              ${moveToCode(project, end, end)}</td>`;
         } else {
-          body += `loop in ${func.Name} at ${loop.StartLocation.Line}:${loop.StartLocation.Column}
-              (${loop.StartLocation.MacroLine}:${loop.StartLocation.MacroColumn})
-              - ${loop.EndLocation.Line}:${loop.EndLocation.Column}
-              (${loop.EndLocation.MacroLine}:${loop.EndLocation.MacroColumn})</td>`;
+          let macrostart = `${loop.StartLocation.MacroLine}:${loop.StartLocation.MacroColumn}`;
+          let macroend = `${loop.EndLocation.MacroLine}:${loop.EndLocation.MacroColumn}`;
+          let start = `${loop.StartLocation.Line}:${loop.StartLocation.Column}`;
+          let end = `${loop.EndLocation.Line}:${loop.EndLocation.Column}`;
+          body += `loop in ${func.Name} at
+              ${moveToCode(project, start, start)}
+              (${moveToCode(project, macrostart, macrostart)}) -
+              ${moveToCode(project, end, end)}
+              (${moveToCode(project, macroend, macroend)})</td>`;
         }
         body += checkTrait(loop.Traits.IsAnalyzed);
         if (loop.Traits.IsAnalyzed == "Yes") {
@@ -156,7 +164,7 @@ export class LoopTreeProvider implements ProjectContentProvider{
           (function($, undefined) {
             $(function() {
               $('tr.hide').hide();
-              $('tr.subloops td a').text('+');
+              $('tr.subloops td a.loops').text('+');
               $('tr td a.loops').on('click', function() {
                 let text = $(this).text();
                 let level = Number($(this).parents('tr').find('td.level').text());

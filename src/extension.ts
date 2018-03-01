@@ -85,7 +85,17 @@ export function activate(context: vscode.ExtensionContext) {
     (uri:vscode.Uri) => {
       vscode.workspace.openTextDocument(uri).then(
         (success) => {
-          vscode.window.showTextDocument(success);
+          vscode.window.showTextDocument(success).then(
+            (doc) => {
+              if (uri.query != '') {
+                let sep = uri.query.indexOf(':');
+                let line = Number(uri.query.substring(0, sep));
+                let col = Number(uri.query.substring(sep + 1, uri.query.length));
+                doc.selection = new vscode.Selection(line - 1, col - 1, line - 1, col - 1);
+                doc.revealRange(new vscode.Range(line - 1, col - 1, line - 1, col - 1));
+              }
+            }
+          );
         },
         (reason) => {
           vscode.window.showErrorMessage(
@@ -109,9 +119,6 @@ export function activate(context: vscode.ExtensionContext) {
   let showLoopTree = vscode.commands.registerCommand('tsar.loop.tree',
     (uri:vscode.Uri) => {
       let project = engine.project(uri);
-
-
-
       vscode.commands.executeCommand('vscode.previewHtml',
           encodeLocation(LoopTreeProvider.scheme, project.uri),
           vscode.ViewColumn.Two,
