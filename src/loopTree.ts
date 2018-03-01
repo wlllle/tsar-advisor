@@ -80,8 +80,6 @@ export class LoopTreeProvider implements ProjectContentProvider{
   }
 
   private _provideFunctionList(project: Project, funclst: msg.FunctionList): string {
-    //let result = `<!DOCTYPE html><html><head>${styleLink()}</head><body>`;
-    //result += `<table><tr><th>Functions and Loops</th><th>Level</th></tr>`;
     let bootstrap = vscode.Uri.file(
       path.resolve(__dirname, '..', '..', 'node_modules', 'bootstrap', 'dist'));
     let jquery = vscode.Uri.file(
@@ -96,13 +94,11 @@ export class LoopTreeProvider implements ProjectContentProvider{
           <meta name="author" content="">
           <title>Functions and Loop Tree</title>
           <link href="${bootstrap}/css/bootstrap.min.css" rel="stylesheet">
+          <script src="${jquery}/jquery.min.js"></script>
+          <script src="${bootstrap}/js/bootstrap.min.js"></script>
         </head>
         <body>`;
-    let bootstrapFooter =
-      `   <script src="${jquery}/jquery.min.js"></script>
-          <script src="${bootstrap}/js/bootstrap.min.js"></script>
-        </body>
-      </html>`
+    let bootstrapFooter = `</body></html>`;
     let body =
       `   <table class="table table-hover">
             <tr><th>Functions and Loops</th><th>Is Analyzed</th><th>Perfect</th><th>Exit</th>
@@ -111,19 +107,29 @@ export class LoopTreeProvider implements ProjectContentProvider{
     for (let i = 0; i < funclen; i++) {
       let func = funclst.Functions[i];
       let looplen = func.Loops.length;
+      /// TODO (dmitrij.murygin@bk.ru) : handle functions without loops.
       if (looplen) {
-        body += `<tr><td>${commandLink('tsar.loop.tree', project, 'Loops', '-', `${func.ID}`)}${func.Name}</td>`;
+        body += `<tr><td><a href='' class='loops'>−</a>`;
       } else {
-        body += `<tr><td>${commandLink('tsar.loop.tree', project, 'Loops', '+', `${func.ID}`)}${func.Name}</td>`;
+        body += `<tr><td>${commandLink('tsar.loop.tree', project, 'Loops', '+', `${func.ID}`)}`;
       }
-      body += `<td>&#10003</td><td>N/A</td><td>N/A</td><td>0</td><td>N/A</td>` +
+      body += `${func.Name}</td><td>&#10003</td><td>N/A</td><td>N/A</td><td class='level'>0</td><td>N/A</td>` +
           checkTrait(func.Traits.Readonly) + checkTrait(func.Traits.NoReturn) + `</tr>`;
       for (let j = 0; j < looplen; j++) {
         let loop = func.Loops[j];
-        body += `<tr><td>`;
+        if ((loop.Level == 1) && (j == looplen - 1 || func.Loops[j + 1].Level <= loop.Level)) {
+          body += `<tr><td>`;
+        } else if (j == looplen - 1 || func.Loops[j + 1].Level <= loop.Level) {
+          body += `<tr class='hide'><td>`;
+        } else if (loop.Level == 1) {
+          body += `<tr class='subloops'><td>`;
+        } else {
+          body += `<tr class='hide subloops'><td>`;
+        }
         for (let k = 0; k < loop.Level; k++) {
           body += `&emsp;`;
         }
+        body += `<a href='' class='loops'></a>`;
         if ((loop.StartLocation.Line == loop.StartLocation.MacroLine) &&
             (loop.StartLocation.Column == loop.StartLocation.MacroColumn)) {
           body += `loop in ${func.Name} at ${loop.StartLocation.Line}:${loop.StartLocation.Column}
@@ -140,11 +146,52 @@ export class LoopTreeProvider implements ProjectContentProvider{
         } else {
           body += `<td>N/A</td><td>N/A</td>`;
         }
-        body += `<td>${loop.Level}</td><td>${loop.Type}</td><td>N/A</td><td>N/A</td></tr>`;
+        body += `<td class='level'>${loop.Level}</td><td>${loop.Type}</td><td>N/A</td><td>N/A</td></tr>`;
       }
     }
     body += `</table>`;
-    return bootstrapHeader + body + bootstrapFooter;
+    /// TODO (dmitrij.murygin@bk.ru) : keep subtrees of loops.
+    let script = `
+        <script>
+          (function($, undefined) {
+            $(function() {
+              $('tr.hide').hide();
+              $('tr.subloops td a').text('+');
+              $('tr td a.loops').on('click', function() {
+                let text = $(this).text();
+                let level = Number($(this).parents('tr').find('td.level').text());
+                let a = $(this).parents('tr').next();
+                let l = Number(a.find('td.level').text());
+                while (l > level) {
+                  if (text == '−') {
+                    if (!a.hasClass('hide')) {
+                      a.addClass('hide');
+                      a.hide();
+                    }
+                    let al = a.find('td').find('a.loops');
+                    if (al.text() == '−')
+                      al.text('+');
+                  } else {
+                    if (l == level + 1) {
+                      a.removeClass('hide');
+                      a.show();
+                    }
+                  }
+                  a = a.next();
+                  l = Number(a.find('td.level').text());
+                }
+                if (text == '+') {
+                  $(this).text('−');
+                } else {
+                  $(this).text('+');
+                }
+                return false;
+              });
+              return false;
+            });
+          })(jQuery);
+        </script>`;
+    return bootstrapHeader + body + script + bootstrapFooter;
   }
 
   private _provideLoopTree(project: Project, func: msg.LoopTree): string {
@@ -154,10 +201,6 @@ export class LoopTreeProvider implements ProjectContentProvider{
     for (let i = 0; i < funclen; i++) {
       if (funclist.Functions[i].ID != func.ID)
         continue;
-      if (funclist.Functions[i].Loops.length) {
-        funclist.Functions[i].Loops = [];
-        return this._provideFunctionList(project, funclist);
-      }
       funclist.Functions[i].Loops = func.Loops;
       return this._provideFunctionList(project, funclist);
     }

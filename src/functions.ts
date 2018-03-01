@@ -102,8 +102,7 @@ export function commandLink(
        href="${encodeURI(
          'command:' + command + '?' + JSON.stringify(project.uri))}"
        title="${title}">
-      ${body}
-    </a>`;
+      ${body}</a>`;
 }
 
 /**
