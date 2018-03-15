@@ -102,7 +102,7 @@ export class LoopTreeProvider implements ProjectContentProvider{
     let body =
       `   <table class="table table-hover">
             <tr><th>Functions and Loops</th><th>Is Analyzed</th><th>Perfect</th><th>Exit</th>
-            <th>Level</th><th>Type</th><th>Readonly</th><th>NoReturn</th></tr>`;
+            <th>Level</th><th>Input/Output</th><th>Type</th><th>Readonly</th><th>NoReturn</th></tr>`;
     let funclen = funclst.Functions.length;
     for (let i = 0; i < funclen; i++) {
       let func = funclst.Functions[i];
@@ -113,8 +113,9 @@ export class LoopTreeProvider implements ProjectContentProvider{
       } else {
         body += `<tr><td>${commandLink('tsar.loop.tree', project, 'Loops', '+', `${func.ID}`)}`;
       }
-      body += `${func.Name}</td><td>&#10003</td><td>N/A</td><td>N/A</td><td class='level'>0</td><td>N/A</td>` +
-          checkTrait(func.Traits.Readonly) + checkTrait(func.Traits.NoReturn) + `</tr>`;
+      body += `${func.Name}</td><td>&#10003</td><td>N/A</td><td>N/A</td><td class='level'>0</td>` +
+          checkTrait(func.Traits.InOut) + `<td>N/A</td>` + checkTrait(func.Traits.Readonly) +
+          checkTrait(func.Traits.NoReturn) + `</tr>`;
       for (let j = 0; j < looplen; j++) {
         let loop = func.Loops[j];
         if ((loop.Level == 1) && (j == looplen - 1 || func.Loops[j + 1].Level <= loop.Level)) {
@@ -154,7 +155,7 @@ export class LoopTreeProvider implements ProjectContentProvider{
         } else {
           body += `<td>N/A</td><td>N/A</td>`;
         }
-        body += `<td class='level'>${loop.Level}</td><td>${loop.Type}</td><td>N/A</td><td>N/A</td></tr>`;
+        body += `<td class='level'>${loop.Level}</td><td>N/A</td><td>${loop.Type}</td><td>N/A</td><td>N/A</td></tr>`;
       }
     }
     body += `</table>`;
