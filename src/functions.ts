@@ -177,8 +177,10 @@ export function waitHtml(title: string, project: Project): string {
     </html>`;
 }
 
-export function checkTrait(trait: string): string {
+export function checkTrait(trait: string, link = undefined): string {
   if (trait == "Yes") {
+    if (link != undefined)
+      return `<td>` + commandLink(link.command, link.project, link.title, `&#10003;`, link.query) + `</td>`;
     return `<td>&#10003;</td>`;
   } else {
     return `<td>&minus;</td>`;

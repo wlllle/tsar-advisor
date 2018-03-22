@@ -20,6 +20,7 @@ import * as log from './log';
 import {LoopTreeProvider} from './loopTree';
 import * as msg from './messages';
 import {ProjectEngine} from './project';
+import { CalleeFuncProvider } from './calleeFunc';
 
 
 
@@ -58,7 +59,8 @@ export function activate(context: vscode.ExtensionContext) {
   let engine = new ProjectEngine(context);
   engine.register(
     [ProjectProvider.scheme, new ProjectProvider(engine)],
-    [LoopTreeProvider.scheme, new LoopTreeProvider(engine)]
+    [LoopTreeProvider.scheme, new LoopTreeProvider(engine)],
+    [CalleeFuncProvider.scheme, new CalleeFuncProvider(engine)]
   );
   let start = vscode.commands.registerCommand(
     'tsar.start', (uri:vscode.Uri) => {
@@ -88,9 +90,9 @@ export function activate(context: vscode.ExtensionContext) {
           vscode.window.showTextDocument(success).then(
             (doc) => {
               if (uri.query != '') {
-                let sep = uri.query.indexOf(':');
-                let line = Number(uri.query.substring(0, sep));
-                let col = Number(uri.query.substring(sep + 1, uri.query.length));
+                let query = JSON.parse(uri.query);
+                let line = query.Line;
+                let col = query.Column;
                 doc.selection = new vscode.Selection(line - 1, col - 1, line - 1, col - 1);
                 doc.revealRange(new vscode.Range(line - 1, col - 1, line - 1, col - 1));
               }
@@ -125,9 +127,30 @@ export function activate(context: vscode.ExtensionContext) {
           `${log.Extension.displayName} | ${project.prjname}`)
         .then((success) => {
           let looptree = new msg.LoopTree;
-          looptree.ID = Number(uri.query);
+          let query = JSON.parse(uri.query);
+          looptree.ID = query.ID;
           project.send(looptree);
         })
     })
-  context.subscriptions.push(start, stop, openProject, showFuncList, showLoopTree);
+  let showCalleeFunc = vscode.commands.registerCommand('tsar.callee.func',
+    (uri:vscode.Uri) => {
+      let project = engine.project(uri);
+      vscode.commands.executeCommand('vscode.previewHtml',
+          encodeLocation(CalleeFuncProvider.scheme, project.uri),
+          vscode.ViewColumn.Three,
+          `${log.Extension.displayName} | ${project.prjname}`)
+        .then((success) => {
+          let calleefunc = new msg.CalleeFunc;
+          let query = JSON.parse(uri.query);
+          calleefunc.FuncID = query.FuncID;
+          calleefunc.Attr = query.Attr;
+          if ('LoopID' in query) {
+            calleefunc.LoopID = query.LoopID;
+          } else {
+            calleefunc.LoopID = 0;
+          }
+          project.send(calleefunc);
+        })
+    })
+  context.subscriptions.push(start, stop, openProject, showFuncList, showLoopTree, showCalleeFunc);
 }

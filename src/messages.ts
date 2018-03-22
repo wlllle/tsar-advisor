@@ -221,6 +221,7 @@ export interface Location {
 export interface TraitsLoops {
   IsAnalyzed: string;
   Perfect: string;
+  InOut: string;
 }
 
 export interface MainLoopInfo {
@@ -289,6 +290,30 @@ export class FunctionList {
   }
 }
 
+export class CalleeFunc {
+  FuncID: number;
+  LoopID: number;
+  Attr: number;
+  Functions: MainFuncInfo [] = [];
+
+  toJSON(): CalleeFuncJSON {
+    return Object.assign({name: CalleeFunc.name}, this);
+  }
+
+  static fromJSON(json: CalleeFuncJSON|string) : CalleeFunc {
+    if (typeof json === 'string') {
+      return JSON.parse(json, CalleeFunc.reviver);
+    } else {
+      let obj = Object.create(CalleeFunc.prototype);
+      return Object.assign(obj, json);
+    }
+  }
+
+  static reviver(key: string, value: any): any {
+    return key === '' ? CalleeFunc.fromJSON(value) : value;
+  }
+}
+
 /**
  * JSON representation of a request identifier.
  */
@@ -333,4 +358,11 @@ export interface FunctionListJSON extends MessageJSON {
 export interface LoopTreeJSON extends MessageJSON {
   ID: number;
   Loops: MainLoopInfo [];
+}
+
+export interface CalleeFuncJSON extends MessageJSON {
+  FuncID: number;
+  LoopID: number;
+  Attr: number;
+  Functions: MainFuncInfo [];
 }
