@@ -45,18 +45,18 @@ export class CalleeFuncProvider implements ProjectContentProvider{
       return unavailableHtml(prjUri);
     let state = <CalleeFuncProviderState>project.providerState(CalleeFuncProvider.scheme);
     if (project.response !== undefined &&
-        project.response instanceof msg.CalleeFunc)
+        project.response instanceof msg.FunctionList)
       state.response = project.response;
     let response = project.response;
     return new Promise((resolve, reject) => {
-      if (response !== undefined && response instanceof msg.CalleeFunc) {
+      if (response !== undefined && response instanceof msg.FunctionList && response.FuncID != 0) {
         return resolve(this._provideCalleeFunc(project, response));
       }
       return resolve(waitHtml(log.CalleeFunc.title, project));
     });
   }
 
-  private _provideCalleeFunc(project: Project, calleefunc: msg.CalleeFunc): string {
+  private _provideCalleeFunc(project: Project, funclist: msg.FunctionList): string {
     let bootstrap = vscode.Uri.file(
         path.resolve(__dirname, '..', '..', 'node_modules', 'bootstrap', 'dist'));
     let jquery = vscode.Uri.file(
@@ -77,9 +77,9 @@ export class CalleeFuncProvider implements ProjectContentProvider{
         <body>`;
     let bootstrapFooter = `</body></html>`;
     let body = `<ul class="list-unstyled">`;
-    let funclen = calleefunc.Functions.length;
+    let funclen = funclist.Functions.length;
     for (let i = 0; i < funclen; i++) {
-      body += `<li>${calleefunc.Functions[i].Name}</li>`;
+      body += `<li>${funclist.Functions[i].Name}</li>`;
     }
     body += `</ul>`;
     return bootstrapHeader + body + bootstrapFooter;

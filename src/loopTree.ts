@@ -74,7 +74,7 @@ export class LoopTreeProvider implements ProjectContentProvider{
       state.response = project.response;
     let response = project.response;
     return new Promise((resolve, reject) => {
-      if (response !== undefined && response instanceof msg.FunctionList) {
+      if (response !== undefined && response instanceof msg.FunctionList && response.FuncID == 0) {
         return resolve(this._provideFunctionList(project, response));
       } else if (response !== undefined && response instanceof msg.LoopTree) {
         return resolve(this._provideLoopTree(project, response));

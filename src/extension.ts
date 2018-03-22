@@ -115,7 +115,9 @@ export function activate(context: vscode.ExtensionContext) {
           vscode.ViewColumn.Two,
           `${log.Extension.displayName} | ${project.prjname}`)
         .then((success) => {
-          project.send(new msg.FunctionList);
+          let funclist = new msg.FunctionList;
+          funclist.FuncID = 0;
+          project.send(funclist);
         }, null);
     });
   let showLoopTree = vscode.commands.registerCommand('tsar.loop.tree',
@@ -140,16 +142,16 @@ export function activate(context: vscode.ExtensionContext) {
           vscode.ViewColumn.Three,
           `${log.Extension.displayName} | ${project.prjname}`)
         .then((success) => {
-          let calleefunc = new msg.CalleeFunc;
+          let funclist = new msg.FunctionList;
           let query = JSON.parse(uri.query);
-          calleefunc.FuncID = query.FuncID;
-          calleefunc.Attr = query.Attr;
+          funclist.FuncID = query.FuncID;
+          funclist.Attr = query.Attr;
           if ('LoopID' in query) {
-            calleefunc.LoopID = query.LoopID;
+            funclist.LoopID = query.LoopID;
           } else {
-            calleefunc.LoopID = 0;
+            funclist.LoopID = 0;
           }
-          project.send(calleefunc);
+          project.send(funclist);
         })
     })
   context.subscriptions.push(start, stop, openProject, showFuncList, showLoopTree, showCalleeFunc);
