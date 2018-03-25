@@ -16,6 +16,7 @@ import * as fs from 'fs';
 import * as vscode from 'vscode';
 import {Project} from './project';
 import * as log from './log';
+import * as msg from './messages';
 
 /**
  * Encodes location for content provider.
@@ -184,5 +185,21 @@ export function checkTrait(trait: string, link = undefined): string {
     return `<td>&#10003;</td>`;
   } else {
     return `<td>&minus;</td>`;
+  }
+}
+
+export function getStrLocation(project: Project, Loc: msg.Location, ): string {
+  if ((Loc.Line == Loc.MacroLine) &&
+      (Loc.Column == Loc.MacroColumn)) {
+    let loc = `${Loc.Line}:${Loc.Column}`;
+    let locquery = {Line: Loc.Line, Column: Loc.Column};
+    return `${moveToCode(project, loc, JSON.stringify(locquery))}`;
+  } else {
+    let macroloc = `${Loc.MacroLine}:${Loc.MacroColumn}`;
+    let loc = `${Loc.Line}:${Loc.Column}`;
+    let macrolocquery = {Line: Loc.MacroLine, Column: Loc.MacroColumn};
+    let locquery = {Line: Loc.Line, Column: Loc.Column};
+    return `${moveToCode(project, loc, JSON.stringify(locquery))}
+        (${moveToCode(project, macroloc, JSON.stringify(macrolocquery))})`;
   }
 }

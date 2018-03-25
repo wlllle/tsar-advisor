@@ -20,7 +20,7 @@ import * as log from './log';
 import {LoopTreeProvider} from './loopTree';
 import * as msg from './messages';
 import {ProjectEngine} from './project';
-import { CalleeFuncProvider } from './calleeFunc';
+import {CalleeFuncProvider, CalleeFuncProviderState} from './calleeFunc';
 
 
 
@@ -59,8 +59,8 @@ export function activate(context: vscode.ExtensionContext) {
   let engine = new ProjectEngine(context);
   engine.register(
     [ProjectProvider.scheme, new ProjectProvider(engine)],
-    [LoopTreeProvider.scheme, new LoopTreeProvider(engine)],
-    [CalleeFuncProvider.scheme, new CalleeFuncProvider(engine)]
+    [CalleeFuncProvider.scheme, new CalleeFuncProvider(engine)],
+    [LoopTreeProvider.scheme, new LoopTreeProvider(engine)]
   );
   let start = vscode.commands.registerCommand(
     'tsar.start', (uri:vscode.Uri) => {
@@ -115,9 +115,7 @@ export function activate(context: vscode.ExtensionContext) {
           vscode.ViewColumn.Two,
           `${log.Extension.displayName} | ${project.prjname}`)
         .then((success) => {
-          let funclist = new msg.FunctionList;
-          funclist.FuncID = 0;
-          project.send(funclist);
+          project.send(new msg.FunctionList);
         }, null);
     });
   let showLoopTree = vscode.commands.registerCommand('tsar.loop.tree',
@@ -142,14 +140,22 @@ export function activate(context: vscode.ExtensionContext) {
           vscode.ViewColumn.Three,
           `${log.Extension.displayName} | ${project.prjname}`)
         .then((success) => {
-          let funclist = new msg.FunctionList;
+          let funclist = new msg.CalleeFuncList;
           let query = JSON.parse(uri.query);
+          funclist.ID = query.ID;
           funclist.FuncID = query.FuncID;
           funclist.Attr = query.Attr;
           if ('LoopID' in query) {
             funclist.LoopID = query.LoopID;
           } else {
             funclist.LoopID = 0;
+          }
+          if (funclist.ID == '') {
+            let state = <CalleeFuncProviderState>project.providerState(CalleeFuncProvider.scheme);
+            state.response = funclist;
+          } else {
+            let state = <CalleeFuncProviderState>project.providerState(CalleeFuncProvider.scheme);
+            state.response.ID = funclist.ID;
           }
           project.send(funclist);
         })

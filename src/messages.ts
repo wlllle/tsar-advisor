@@ -265,14 +265,13 @@ export interface TraitsFunc {
 export interface MainFuncInfo {
   ID: number;
   Name: string;
+  StartLocation: Location;
+  EndLocation: Location;
   Loops: MainLoopInfo [];
   Traits: TraitsFunc;
 }
 
 export class FunctionList {
-  FuncID: number;
-  LoopID: number;
-  Attr: number;
   Functions: MainFuncInfo [] = [];
 
   toJSON(): FunctionListJSON {
@@ -290,6 +289,38 @@ export class FunctionList {
 
   static reviver(key: string, value: any): any {
     return key === '' ? FunctionList.fromJSON(value) : value;
+  }
+}
+
+export interface CalleeFuncInfo {
+  ID: string;
+  Level: number;
+  Name: string;
+  Locations: Location [];
+}
+
+export class CalleeFuncList {
+  ID: string;
+  FuncID: number;
+  LoopID: number;
+  Attr: number;
+  Functions: CalleeFuncInfo [] = [];
+
+  toJSON(): CalleeFuncListJSON {
+    return Object.assign({name: CalleeFuncList.name}, this);
+  }
+
+  static fromJSON(json: CalleeFuncListJSON|string) : CalleeFuncList {
+    if (typeof json === 'string') {
+      return JSON.parse(json, CalleeFuncList.reviver);
+    } else {
+      let obj = Object.create(CalleeFuncList.prototype);
+      return Object.assign(obj, json);
+    }
+  }
+
+  static reviver(key: string, value: any): any {
+    return key === '' ? CalleeFuncList.fromJSON(value) : value;
   }
 }
 
@@ -331,13 +362,17 @@ export interface StatisticJSON extends MessageJSON {
 }
 
 export interface FunctionListJSON extends MessageJSON {
-  FuncID: number;
-  LoopID: number;
-  Attr: number;
   Functions: MainFuncInfo [];
 }
 
 export interface LoopTreeJSON extends MessageJSON {
   ID: number;
   Loops: MainLoopInfo [];
+}
+
+export interface CalleeFuncListJSON extends MessageJSON {
+  FuncID: number;
+  LoopID: number;
+  Attr: number;
+  Functions: CalleeFuncInfo [];
 }

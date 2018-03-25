@@ -4,7 +4,7 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import {decodeLocation, encodeLocation,
   projectLink, moveToCode, commandLink, numberHtml, styleLink,
-  unavailableHtml, waitHtml, checkTrait} from './functions';
+  unavailableHtml, waitHtml, checkTrait, getStrLocation} from './functions';
 import * as log from './log';
 import * as msg from './messages';
 import {ProjectEngine, Project,
@@ -13,7 +13,7 @@ import {ProjectEngine, Project,
 /**
  * State of a loop tree content provider.
  */
-class LoopTreeProviderState implements ProjectContentProviderState {
+export class LoopTreeProviderState implements ProjectContentProviderState {
   private _provider: LoopTreeProvider;
   constructor(provider: LoopTreeProvider) { this._provider = provider; }
   response: any;
@@ -74,10 +74,12 @@ export class LoopTreeProvider implements ProjectContentProvider{
       state.response = project.response;
     let response = project.response;
     return new Promise((resolve, reject) => {
-      if (response !== undefined && response instanceof msg.FunctionList && response.FuncID == 0) {
+      if (response !== undefined && response instanceof msg.FunctionList) {
         return resolve(this._provideFunctionList(project, response));
       } else if (response !== undefined && response instanceof msg.LoopTree) {
         return resolve(this._provideLoopTree(project, response));
+      } else if (state.response !== undefined) {
+        return resolve(this._provideFunctionList(project, state.response))
       }
       return resolve(waitHtml(log.FunctionList.title, project));
     });
@@ -112,25 +114,31 @@ export class LoopTreeProvider implements ProjectContentProvider{
       let func = funclst.Functions[i];
       let looplen = func.Loops.length;
       let linkInOut = {command: 'tsar.callee.func', project: project, title: 'CalleeFunc',
-          query: JSON.stringify({FuncID: func.ID, Attr: LoopTreeProvider.Attr.LibFunc})};
+          query: JSON.stringify({ID: '', FuncID: func.ID, Attr: LoopTreeProvider.Attr.LibFunc})};
       let linkNoReturn = {command: 'tsar.callee.func', project: project, title: 'CalleeFunc',
-          query: JSON.stringify({FuncID: func.ID, Attr: LoopTreeProvider.Attr.NoReturn})};
+          query: JSON.stringify({ID: '', FuncID: func.ID, Attr: LoopTreeProvider.Attr.NoReturn})};
       /// TODO (dmitrij.murygin@bk.ru) : handle functions without loops.
       if (looplen) {
         body += `<tr><td><a href='' class='loops'>−</a>`;
       } else {
         body += `<tr><td>${commandLink('tsar.loop.tree', project, 'Loops', '+', JSON.stringify({ID: func.ID}))}`;
       }
-      body += `${func.Name}</td><td>&#10003</td><td>N/A</td><td>N/A</td><td class='level'>0</td>` +
+      body += `${func.Name} ` + getStrLocation(project, func.StartLocation) + ` - ` +
+          getStrLocation(project, func.EndLocation) + `</td>
+          <td>&#10003</td>
+          <td>N/A</td>
+          <td>N/A</td>
+          <td class='level'>0</td>` +
           checkTrait(func.Traits.InOut, linkInOut)
-          +`<td>N/A</td>` + checkTrait(func.Traits.Readonly) +
+          +`<td>N/A</td>` +
+          checkTrait(func.Traits.Readonly) +
           checkTrait(func.Traits.NoReturn, linkNoReturn) + `</tr>`;
       for (let j = 0; j < looplen; j++) {
         let loop = func.Loops[j];
         linkInOut.query = JSON.stringify(
-            {FuncID: func.ID, LoopID: loop.ID, Attr: LoopTreeProvider.Attr.LibFunc});
+            {ID: '', FuncID: func.ID, LoopID: loop.ID, Attr: LoopTreeProvider.Attr.LibFunc});
         linkNoReturn.query = JSON.stringify(
-            {FuncID: func.ID, LoopID: loop.ID, Attr: LoopTreeProvider.Attr.NoReturn});
+            {ID: '', FuncID: func.ID, LoopID: loop.ID, Attr: LoopTreeProvider.Attr.NoReturn});
         if ((loop.Level == 1) && (j == looplen - 1 || func.Loops[j + 1].Level <= loop.Level)) {
           body += `<tr><td>`;
         } else if (j == looplen - 1 || func.Loops[j + 1].Level <= loop.Level) {
@@ -143,35 +151,14 @@ export class LoopTreeProvider implements ProjectContentProvider{
         for (let k = 0; k < loop.Level; k++) {
           body += `&emsp;`;
         }
-        body += `<a href='' class='loops'></a>`;
-        if ((loop.StartLocation.Line == loop.StartLocation.MacroLine) &&
-            (loop.StartLocation.Column == loop.StartLocation.MacroColumn)) {
-          let start = `${loop.StartLocation.Line}:${loop.StartLocation.Column}`;
-          let end = `${loop.EndLocation.Line}:${loop.EndLocation.Column}`;
-          let startquery = {Line: loop.StartLocation.Line, Column: loop.StartLocation.Column};
-          let endquery = {Line: loop.EndLocation.Line, Column: loop.EndLocation.Column};
-          body += `loop in ${func.Name} at
-              ${moveToCode(project, start, JSON.stringify(startquery))} -
-              ${moveToCode(project, end, JSON.stringify(endquery))}</td>`;
-        } else {
-          let macrostart = `${loop.StartLocation.MacroLine}:${loop.StartLocation.MacroColumn}`;
-          let macroend = `${loop.EndLocation.MacroLine}:${loop.EndLocation.MacroColumn}`;
-          let start = `${loop.StartLocation.Line}:${loop.StartLocation.Column}`;
-          let end = `${loop.EndLocation.Line}:${loop.EndLocation.Column}`;
-          let macrostartquery = {Line: loop.StartLocation.MacroLine, Column: loop.StartLocation.MacroColumn};
-          let macroendquery = {Line: loop.EndLocation.MacroLine, Column: loop.EndLocation.MacroColumn};
-          let startquery = {Line: loop.StartLocation.Line, Column: loop.StartLocation.Column};
-          let endquery = {Line: loop.EndLocation.Line, Column: loop.EndLocation.Column};
-          body += `loop in ${func.Name} at
-              ${moveToCode(project, start, JSON.stringify(startquery))}
-              (${moveToCode(project, macrostart, JSON.stringify(macrostartquery))}) -
-              ${moveToCode(project, end, JSON.stringify(endquery))}
-              (${moveToCode(project, macroend, JSON.stringify(macroendquery))})</td>`;
-        }
-        body += checkTrait(loop.Traits.IsAnalyzed);
+        body += `<a href='' class='loops'></a>
+            loop in ${func.Name} at ` +
+            getStrLocation(project, loop.StartLocation) + ` - ` +
+            getStrLocation(project, loop.EndLocation) + `</td>` +
+            checkTrait(loop.Traits.IsAnalyzed);
         if (loop.Traits.IsAnalyzed == "Yes") {
           body += checkTrait(loop.Traits.Perfect);
-          if (loop.Exit) {
+          if (loop.Exit > 1) {
             body += `<td>${commandLink('tsar.callee.func', project,
                 'CalleeFunc', `${loop.Exit}`, linkNoReturn.query)}</td>`;
           } else {
@@ -180,8 +167,11 @@ export class LoopTreeProvider implements ProjectContentProvider{
         } else {
           body += `<td>N/A</td><td>N/A</td>`;
         }
-        body += `<td class='level'>${loop.Level}</td>` + checkTrait(loop.Traits.InOut, linkInOut) +
-            `<td>${loop.Type}</td><td>N/A</td><td>N/A</td></tr>`;
+        body += `<td class='level'>${loop.Level}</td>` +
+            checkTrait(loop.Traits.InOut, linkInOut) +
+            `<td>${loop.Type}</td>
+            <td>N/A</td>
+            <td>N/A</td></tr>`;
       }
     }
     body += `</table>`;
@@ -239,6 +229,6 @@ export class LoopTreeProvider implements ProjectContentProvider{
       funclist.Functions[i].Loops = func.Loops;
       return this._provideFunctionList(project, funclist);
     }
-    return `<!DOCTYPE html><html></html>`;
+    return this._provideFunctionList(project, funclist);
   }
 }
