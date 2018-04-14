@@ -17,7 +17,7 @@ import * as net from 'net';
 import {encodeLocation} from './functions';
 import {ProjectProvider} from './general';
 import * as log from './log';
-import {LoopTreeProvider} from './loopTree';
+import {LoopTreeProvider, LoopTreeProviderState} from './loopTree';
 import * as msg from './messages';
 import {ProjectEngine} from './project';
 import {CalleeFuncProvider, CalleeFuncProviderState} from './calleeFunc';
@@ -132,6 +132,34 @@ export function activate(context: vscode.ExtensionContext) {
           project.send(looptree);
         })
     })
+  let ExpColLoopTree = vscode.commands.registerCommand('tsar.expcol.looptree',
+    (uri:vscode.Uri) => {
+      let project = engine.project(uri);
+      let state = <LoopTreeProviderState>project.providerState(LoopTreeProvider.scheme);
+      let response = state.response;
+      let query = JSON.parse(uri.query);
+      let i = 0;
+      while (i < response.Functions.length && query.FuncID != response.Functions[i].ID)
+        i++;;
+      if (!query.LoopID) {
+        for (let j = 0; j < response.Functions[i].Loops.length; j++)
+          if (response.Functions[i].Loops[j].Level == 1)
+          response.Functions[i].Loops[j].Hide = query.Hide;
+      } else {
+        let j = 0;
+        while (j < response.Functions[i].Loops.length && query.LoopID != response.Functions[i].Loops[j].ID)
+          j++;
+        let idx = j + 1;
+        while (idx < response.Functions[i].Loops.length &&
+            response.Functions[i].Loops[idx].Level > response.Functions[i].Loops[j].Level) {
+          if (response.Functions[i].Loops[idx].Level - 1 == response.Functions[i].Loops[j].Level) {
+            response.Functions[i].Loops[idx].Hide = query.Hide;
+          }
+          idx++;
+        }
+      }
+      project.update(response);
+    });
   let showCalleeFunc = vscode.commands.registerCommand('tsar.callee.func',
     (uri:vscode.Uri) => {
       let project = engine.project(uri);
@@ -159,6 +187,7 @@ export function activate(context: vscode.ExtensionContext) {
           }
           project.send(funclist);
         })
-    })
-  context.subscriptions.push(start, stop, openProject, showFuncList, showLoopTree, showCalleeFunc);
+    });
+  context.subscriptions.push(start, stop, openProject, showFuncList,
+      showLoopTree, ExpColLoopTree, showCalleeFunc);
 }

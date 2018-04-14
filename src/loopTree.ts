@@ -117,11 +117,16 @@ export class LoopTreeProvider implements ProjectContentProvider{
           query: JSON.stringify({ID: '', FuncID: func.ID, Attr: LoopTreeProvider.Attr.LibFunc})};
       let linkNoReturn = {command: 'tsar.callee.func', project: project, title: 'CalleeFunc',
           query: JSON.stringify({ID: '', FuncID: func.ID, Attr: LoopTreeProvider.Attr.NoReturn})};
-      /// TODO (dmitrij.murygin@bk.ru) : handle functions without loops.
+      body += `<tr><td>`;
       if (looplen) {
-        body += `<tr><td><a href='' class='loops'>−</a>`;
-      } else {
-        body += `<tr><td>${commandLink('tsar.loop.tree', project, 'Loops', '+', JSON.stringify({ID: func.ID}))}`;
+        if (func.Loops[0].Hide)
+          body += `${commandLink('tsar.expcol.looptree', project, 'Expand', '+',
+              JSON.stringify({FuncID: func.ID, LoopID: 0, Hide: false}))}`;
+        else
+          body += `${commandLink('tsar.expcol.looptree', project, 'Collapse', '&minus;',
+              JSON.stringify({FuncID: func.ID, LoopID: 0, Hide: true}))}`;
+      } else if (func.Traits.Loops == "Yes") {
+        body += `${commandLink('tsar.loop.tree', project, 'Loops', '+', JSON.stringify({ID: func.ID}))}`;
       }
       body += `${func.Name} ` + getStrLocation(project, func.StartLocation) + ` - ` +
           getStrLocation(project, func.EndLocation) + `</td>
@@ -135,24 +140,40 @@ export class LoopTreeProvider implements ProjectContentProvider{
           checkTrait(func.Traits.NoReturn, linkNoReturn) + `</tr>`;
       for (let j = 0; j < looplen; j++) {
         let loop = func.Loops[j];
+        if (loop.Hide == undefined && loop.Level != 1)
+          loop.Hide = true;
+        else if (loop.Hide == undefined && loop.Level == 1)
+          loop.Hide = false;
+      }
+      let Hide = false;
+      let PrevLevel = 0;
+      for (let j = 0; j < looplen; j++) {
+        let loop = func.Loops[j];
+        if (Hide && loop.Level > PrevLevel)
+          continue;
+        if (loop.Hide) {
+          Hide = true;
+          PrevLevel = loop.Level;
+          continue;
+        }
+        Hide = false;
         linkInOut.query = JSON.stringify(
             {ID: '', FuncID: func.ID, LoopID: loop.ID, Attr: LoopTreeProvider.Attr.LibFunc});
         linkNoReturn.query = JSON.stringify(
             {ID: '', FuncID: func.ID, LoopID: loop.ID, Attr: LoopTreeProvider.Attr.NoReturn});
-        if ((loop.Level == 1) && (j == looplen - 1 || func.Loops[j + 1].Level <= loop.Level)) {
-          body += `<tr><td>`;
-        } else if (j == looplen - 1 || func.Loops[j + 1].Level <= loop.Level) {
-          body += `<tr class='hide'><td>`;
-        } else if (loop.Level == 1) {
-          body += `<tr class='subloops'><td>`;
-        } else {
-          body += `<tr class='hide subloops'><td>`;
-        }
+        body += `<tr><td>`;
         for (let k = 0; k < loop.Level; k++) {
           body += `&emsp;`;
         }
-        body += `<a href='' class='loops'></a>
-            loop in ${func.Name} at ` +
+        if (j != looplen - 1 && func.Loops[j + 1].Level > loop.Level) {
+          if (func.Loops[j + 1].Hide)
+            body += `${commandLink('tsar.expcol.looptree', project, 'Expand', '+',
+                JSON.stringify({FuncID: func.ID, LoopID: loop.ID, Hide: false}))}`;
+          else
+            body += `${commandLink('tsar.expcol.looptree', project, 'Collapse', '&minus;',
+                JSON.stringify({FuncID: func.ID, LoopID: loop.ID, Hide: true}))}`;
+        }
+        body += `loop in ${func.Name} at ` +
             getStrLocation(project, loop.StartLocation) + ` - ` +
             getStrLocation(project, loop.EndLocation) + `</td>` +
             checkTrait(loop.Traits.IsAnalyzed);
@@ -167,7 +188,7 @@ export class LoopTreeProvider implements ProjectContentProvider{
         } else {
           body += `<td>N/A</td><td>N/A</td>`;
         }
-        body += `<td class='level'>${loop.Level}</td>` +
+        body += `<td>${loop.Level}</td>` +
             checkTrait(loop.Traits.InOut, linkInOut) +
             `<td>${loop.Type}</td>
             <td>N/A</td>
@@ -175,48 +196,7 @@ export class LoopTreeProvider implements ProjectContentProvider{
       }
     }
     body += `</table>`;
-    /// TODO (dmitrij.murygin@bk.ru) : keep subtrees of loops.
-    let script = `
-        <script>
-          (function($, undefined) {
-            $(function() {
-              $('tr.hide').hide();
-              $('tr.subloops td a.loops').text('+');
-              $('tr td a.loops').on('click', function() {
-                let text = $(this).text();
-                let level = Number($(this).parents('tr').find('td.level').text());
-                let a = $(this).parents('tr').next();
-                let l = Number(a.find('td.level').text());
-                while (l > level) {
-                  if (text == '−') {
-                    if (!a.hasClass('hide')) {
-                      a.addClass('hide');
-                      a.hide();
-                    }
-                    let al = a.find('td').find('a.loops');
-                    if (al.text() == '−')
-                      al.text('+');
-                  } else {
-                    if (l == level + 1) {
-                      a.removeClass('hide');
-                      a.show();
-                    }
-                  }
-                  a = a.next();
-                  l = Number(a.find('td.level').text());
-                }
-                if (text == '+') {
-                  $(this).text('−');
-                } else {
-                  $(this).text('+');
-                }
-                return false;
-              });
-              return false;
-            });
-          })(jQuery);
-        </script>`;
-    return bootstrapHeader + body + script + bootstrapFooter;
+    return bootstrapHeader + body + bootstrapFooter;
   }
 
   private _provideLoopTree(project: Project, func: msg.LoopTree): string {

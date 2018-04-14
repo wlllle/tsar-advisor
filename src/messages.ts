@@ -232,6 +232,7 @@ export interface MainLoopInfo {
   Exit: number;
   Level: number;
   Type: string;
+  Hide: boolean;
 }
 
 export class LoopTree {
@@ -260,6 +261,7 @@ export interface TraitsFunc {
   Readonly: string;
   NoReturn: string;
   InOut: string;
+  Loops: string;
 }
 
 export interface MainFuncInfo {
