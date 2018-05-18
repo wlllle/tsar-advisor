@@ -107,7 +107,7 @@ export class LoopTreeProvider implements ProjectContentProvider{
     let bootstrapFooter = `</body></html>`;
     let body =
       `   <table class="table table-hover">
-            <tr><th>Functions and Loops</th><th>Is Analyzed</th><th>Perfect</th><th>Exit</th>
+            <tr><th>Functions and Loops</th><th>Is Analyzed</th><th>Canonical</th><th>Perfect</th><th>Exit</th>
             <th>Level</th><th>Input/Output</th><th>Type</th><th>Readonly</th><th>NoReturn</th></tr>`;
     let funclen = funclst.Functions.length;
     for (let i = 0; i < funclen; i++) {
@@ -131,6 +131,7 @@ export class LoopTreeProvider implements ProjectContentProvider{
       body += `${func.Name} ` + getStrLocation(project, func.StartLocation) + ` - ` +
           getStrLocation(project, func.EndLocation) + `</td>
           <td>&#10003</td>
+          <td>N/A</td>
           <td>N/A</td>
           <td>N/A</td>
           <td class='level'>0</td>` +
@@ -178,7 +179,7 @@ export class LoopTreeProvider implements ProjectContentProvider{
             getStrLocation(project, loop.EndLocation) + `</td>` +
             checkTrait(loop.Traits.IsAnalyzed);
         if (loop.Traits.IsAnalyzed == "Yes") {
-          body += checkTrait(loop.Traits.Perfect);
+          body += checkTrait(loop.Traits.Canonical) + checkTrait(loop.Traits.Perfect);
           if (loop.Exit > 1) {
             body += `<td>${commandLink('tsar.callee.func', project,
                 'CalleeFunc', `${loop.Exit}`, linkNoReturn.query)}</td>`;

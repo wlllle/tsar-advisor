@@ -222,6 +222,7 @@ export interface TraitsLoops {
   IsAnalyzed: string;
   Perfect: string;
   InOut: string;
+  Canonical: string;
 }
 
 export interface MainLoopInfo {
