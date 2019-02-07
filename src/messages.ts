@@ -147,7 +147,9 @@ export class CommandLine {
  */
 export interface TraitStatistic {
   AddressAccess: number;
+  HeaderAccess: number;
   NoAccess: number;
+  Readonly: number;
   Shared: number;
   Private: number;
   FirstPrivate: number;
@@ -155,8 +157,10 @@ export interface TraitStatistic {
   LastPrivate: number;
   DynamicPrivate: number;
   Reduction: number;
-  Dependency: number;
   Induction: number;
+  Anti: number;
+  Output: number;
+  Flow: number;
 }
 
 /**

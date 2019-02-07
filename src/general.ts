@@ -110,6 +110,8 @@ export class ProjectProvider implements ProjectContentProvider{
   private _listOfTraits(stat: msg.Statistic): string {
     let html = '<ul class="summary-item-list">';
     let count = 0;
+    html += `<li>${numberHtml(stat.Traits.Readonly)} readonly variables </li>`;
+    count += stat.Traits.Readonly;
     html += `<li>${numberHtml(stat.Traits.Shared)} shared variables </li>`;
     count += stat.Traits.Shared;
     html += `<li>${numberHtml(stat.Traits.Private)} private variables </li>`;
@@ -124,10 +126,16 @@ export class ProjectProvider implements ProjectContentProvider{
     count += stat.Traits.Reduction;
     html += `<li>${numberHtml(stat.Traits.Induction)} induction variables </li>`;
     count += stat.Traits.Induction;
-    html += `<li>${numberHtml(stat.Traits.Dependency)} unclassified dependencies </li>`;
-    count += stat.Traits.Dependency;
+    html += `<li>${numberHtml(stat.Traits.Flow)} flow dependencies </li>`;
+    count += stat.Traits.Flow;
+    html += `<li>${numberHtml(stat.Traits.Anti)} anti dependencies </li>`;
+    count += stat.Traits.Anti;
+    html += `<li>${numberHtml(stat.Traits.Output)} output dependencies </li>`;
+    count += stat.Traits.Output;
     html += `<li>${numberHtml(stat.Traits.AddressAccess)} address accesses </li>`;
     count += stat.Traits.AddressAccess;
+    html += `<li>${numberHtml(stat.Traits.HeaderAccess)} header accesses </li>`;
+    count += stat.Traits.HeaderAccess;
     html += '</ul>';
     html = `<p>The following loop traits have been explored (total ${numberHtml(count)}):</p>${html}`;
     return html;
