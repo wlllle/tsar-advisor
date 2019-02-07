@@ -60,11 +60,11 @@
       "prepublish-clean": "rimraf out",
       "prepublish-ts": "tsc -p ./",
       "prepublish-css": "catw ./html/*.css > ./out/src/style.css",
-      "prepublish-addon": "node ./addon/addon.js -noW ../../dvmhrepo/sapfor/idb/trunk/src/base ../tsar-370/tsar ./out/src",
+      "prepublish-addon": "node ./addon/addon.js -noW ../apc/sapfor/bcl ../vs/sapfor/analyzers/tsar/trunk/tsar ./out/src",
       "vscode:prepublish": "npm-run-all -n prepublish-clean prepublish-ts prepublish-css prepublish-addon",
       "watch-ts": "tsc -watch -p ./",
       "watch-css": "catw ./html/*.css -o ./out/src/style.css -v",
-      "watch-addon": "node ./addon/addon.js -d ../../dvmhrepo/sapfor/idb/trunk/src/base ../tsar-370/tsar ./out/src",
+      "watch-addon": "node ./addon/addon.js -d ../apc/sapfor/bcl ../vs/sapfor/analyzers/tsar/trunk/tsar ./out/src",
       "watch": "npm-run-all -c -n -p watch-ts watch-css watch-addon"
     },
     "devDependencies": {

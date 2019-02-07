@@ -7,14 +7,14 @@
       },
       "target_name": "bclSocket",
       "sources": [
-        "<@(bcl)/NodeJSSocket.cpp"
+        "<@(bcl)/lib/Socket/NodeJSSocket/NodeJSSocket.cpp"
       ],
       "include_dirs": [
-        "<@(bcl)"
+        "<@(bcl)/include"
       ],
       "link_settings": {
         "libraries": [
-          "-ltsar"
+          "-lTSARServer"
         ]
       },
       "cflags": [

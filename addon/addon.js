@@ -123,13 +123,12 @@ function nodeGypExec(cmd, args, cb_stdout, cb_end) {
   let nodeGypArgs = [
     'rebuild',
     '-C', __dirname,
-    '--target=1.4.6',
+    '--target=3.1.2',
     '--dist-url=https://atom.io/download/atom-shell'
   ];
   if (config === 'Debug')
     nodeGypArgs.push('-d');
   if (os == 'win32') {
-    nodeGypArgs.push('--arch=ia32');
     child = spawn('cmd.exe', [ '/c','node-gyp'].concat(nodeGypArgs));
   } else {
     child = spawn('node-gyp', nodeGypArgs);
