@@ -108,7 +108,7 @@ export class LoopTreeProvider implements ProjectContentProvider{
     let body =
       `   <table class="table table-hover">
             <tr><th>Functions and Loops</th><th>Is Analyzed</th><th>Canonical</th><th>Perfect</th><th>Exit</th>
-            <th>Level</th><th>Input/Output</th><th>Type</th><th>Readonly</th><th>NoReturn</th></tr>`;
+            <th>Level</th><th>Input/Output</th><th>Type</th><th>Readonly</th><th>UnsafeCFG</th></tr>`;
     let funclen = funclst.Functions.length;
     for (let i = 0; i < funclen; i++) {
       let func = funclst.Functions[i];
@@ -138,7 +138,7 @@ export class LoopTreeProvider implements ProjectContentProvider{
           checkTrait(func.Traits.InOut, linkInOut)
           +`<td>N/A</td>` +
           checkTrait(func.Traits.Readonly) +
-          checkTrait(func.Traits.NoReturn, linkNoReturn) + `</tr>`;
+          checkTrait(func.Traits.UnsafeCFG, linkNoReturn) + `</tr>`;
       for (let j = 0; j < looplen; j++) {
         let loop = func.Loops[j];
         if (loop.Hide == undefined && loop.Level != 1)
@@ -205,7 +205,7 @@ export class LoopTreeProvider implements ProjectContentProvider{
     let funclist: msg.FunctionList = state.response;
     let funclen = funclist.Functions.length;
     for (let i = 0; i < funclen; i++) {
-      if (funclist.Functions[i].ID != func.ID)
+      if (funclist.Functions[i].ID != func.FunctionID)
         continue;
       funclist.Functions[i].Loops = func.Loops;
       return this._provideFunctionList(project, funclist);

@@ -128,7 +128,7 @@ export function activate(context: vscode.ExtensionContext) {
         .then((success) => {
           let looptree = new msg.LoopTree;
           let query = JSON.parse(uri.query);
-          looptree.ID = query.ID;
+          looptree.FunctionID = query.ID;
           project.send(looptree);
         })
     })

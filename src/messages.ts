@@ -225,7 +225,7 @@ export interface TraitsLoops {
   Canonical: string;
 }
 
-export interface MainLoopInfo {
+export interface Loop {
   ID: number; 
   StartLocation: Location;
   EndLocation: Location;
@@ -237,8 +237,8 @@ export interface MainLoopInfo {
 }
 
 export class LoopTree {
-  ID: number;
-  Loops: MainLoopInfo [] = [];
+  FunctionID: number;
+  Loops: Loop [] = [];
 
   toJSON(): LoopTreeJSON {
     return Object.assign({name: LoopTree.name}, this);
@@ -258,24 +258,24 @@ export class LoopTree {
   }
 }
 
-export interface TraitsFunc {
+export interface FunctionTraits {
   Readonly: string;
-  NoReturn: string;
+  UnsafeCFG: string;
   InOut: string;
   Loops: string;
 }
 
-export interface MainFuncInfo {
+export interface Function {
   ID: number;
   Name: string;
   StartLocation: Location;
   EndLocation: Location;
-  Loops: MainLoopInfo [];
-  Traits: TraitsFunc;
+  Loops: Loop [];
+  Traits: FunctionTraits;
 }
 
 export class FunctionList {
-  Functions: MainFuncInfo [] = [];
+  Functions: Function [] = [];
 
   toJSON(): FunctionListJSON {
     return Object.assign({name: FunctionList.name}, this);
@@ -365,12 +365,12 @@ export interface StatisticJSON extends MessageJSON {
 }
 
 export interface FunctionListJSON extends MessageJSON {
-  Functions: MainFuncInfo [];
+  Functions: Function [];
 }
 
 export interface LoopTreeJSON extends MessageJSON {
-  ID: number;
-  Loops: MainLoopInfo [];
+  FunctionID: number;
+  Loops: Loop [];
 }
 
 export interface CalleeFuncListJSON extends MessageJSON {
