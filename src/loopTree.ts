@@ -180,14 +180,14 @@ export class LoopTreeProvider implements ProjectContentProvider{
             checkTrait(loop.Traits.IsAnalyzed);
         if (loop.Traits.IsAnalyzed == "Yes") {
           body += checkTrait(loop.Traits.Canonical) + checkTrait(loop.Traits.Perfect);
-          if (loop.Exit > 1) {
-            body += `<td>${commandLink('tsar.callee.func', project,
-                'CalleeFunc', `${loop.Exit}`, linkNoReturn.query)}</td>`;
-          } else {
-            body += `<td>${loop.Exit}</td>`;
-          }
         } else {
           body += `<td>N/A</td><td>N/A</td>`;
+        }
+        if (loop.Exit > 1) {
+          body += `<td>${commandLink('tsar.callee.func', project,
+              'CalleeFunc', `${loop.Exit}`, linkNoReturn.query)}</td>`;
+        } else {
+          body += `<td>${loop.Exit}</td>`;
         }
         body += `<td>${loop.Level}</td>` +
             checkTrait(loop.Traits.InOut, linkInOut) +
