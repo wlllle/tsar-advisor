@@ -28,10 +28,6 @@ export class LoopTreeProvider implements ProjectContentProvider{
   static scheme = "tsar-looptree";
   private _onDidChange = new vscode.EventEmitter<vscode.Uri>();
   private _engine: ProjectEngine;
-  static Attr = {
-    LibFunc: 1,
-    NoReturn: 2
-  }
 
   constructor(engine: ProjectEngine) { this._engine = engine; }
   dispose() { this._onDidChange.dispose(); }
@@ -114,9 +110,9 @@ export class LoopTreeProvider implements ProjectContentProvider{
       let func = funclst.Functions[i];
       let looplen = func.Loops.length;
       let linkInOut = {command: 'tsar.callee.func', project: project, title: 'CalleeFunc',
-          query: JSON.stringify({ID: '', FuncID: func.ID, Attr: LoopTreeProvider.Attr.LibFunc})};
+          query: JSON.stringify({ID: '', FuncID: func.ID, Attr: [msg.StatementAttr.InOut]})};
       let linkNoReturn = {command: 'tsar.callee.func', project: project, title: 'CalleeFunc',
-          query: JSON.stringify({ID: '', FuncID: func.ID, Attr: LoopTreeProvider.Attr.NoReturn})};
+          query: JSON.stringify({ID: '', FuncID: func.ID, Attr: [msg.StatementAttr.UnsafeCFG]})};
       body += `<tr><td>`;
       if (looplen) {
         if (func.Loops[0].Hide)
@@ -159,9 +155,9 @@ export class LoopTreeProvider implements ProjectContentProvider{
         }
         Hide = false;
         linkInOut.query = JSON.stringify(
-            {ID: '', FuncID: func.ID, LoopID: loop.ID, Attr: LoopTreeProvider.Attr.LibFunc});
+            {ID: '', FuncID: func.ID, LoopID: loop.ID, Attr: [msg.StatementAttr.InOut]});
         linkNoReturn.query = JSON.stringify(
-            {ID: '', FuncID: func.ID, LoopID: loop.ID, Attr: LoopTreeProvider.Attr.NoReturn});
+            {ID: '', FuncID: func.ID, LoopID: loop.ID, Attr: [msg.StatementAttr.Exit]});
         body += `<tr><td>`;
         for (let k = 0; k < loop.Level; k++) {
           body += `&emsp;`;

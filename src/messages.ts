@@ -295,6 +295,8 @@ export class FunctionList {
   }
 }
 
+export enum StatementAttr {Entry, Exit, InOut, UnsafeCFG};
+
 export interface CalleeFuncInfo {
   ID: string;
   Level: number;
@@ -306,11 +308,19 @@ export class CalleeFuncList {
   ID: string;
   FuncID: number;
   LoopID: number;
-  Attr: number;
+  Attr: StatementAttr [];
   Functions: CalleeFuncInfo [] = [];
 
   toJSON(): CalleeFuncListJSON {
-    return Object.assign({name: CalleeFuncList.name}, this);
+    let json:any = Object.assign({name: CalleeFuncList.name}, this);
+    // Object.assign does not make a deep copy, so it is necessary
+    // to assign a new value to json.Attr to avoid changing of 'this'
+    // in the loop below.
+    json.Attr = [];
+    for (let attr in this.Attr) {
+      json.Attr[attr] = StatementAttr[this.Attr[attr]];
+    }
+    return json;
   }
 
   static fromJSON(json: CalleeFuncListJSON|string) : CalleeFuncList {
@@ -318,7 +328,11 @@ export class CalleeFuncList {
       return JSON.parse(json, CalleeFuncList.reviver);
     } else {
       let obj = Object.create(CalleeFuncList.prototype);
-      return Object.assign(obj, json);
+      Object.assign(obj, json);
+      for (let attr in json['Attr']) {
+        obj.Attr[attr] = StatementAttr[json['Attr'][attr]];
+      }
+      return obj;
     }
   }
 
@@ -376,6 +390,6 @@ export interface LoopTreeJSON extends MessageJSON {
 export interface CalleeFuncListJSON extends MessageJSON {
   FuncID: number;
   LoopID: number;
-  Attr: number;
+  Attr: string [];
   Functions: CalleeFuncInfo [];
 }
