@@ -103,16 +103,18 @@ export class LoopTreeProvider implements ProjectContentProvider{
     let bootstrapFooter = `</body></html>`;
     let body =
       `   <table class="table table-hover">
-            <tr><th>Functions and Loops</th><th>Is Analyzed</th><th>Canonical</th><th>Perfect</th><th>Exit</th>
-            <th>Level</th><th>Input/Output</th><th>Type</th><th>Readonly</th><th>UnsafeCFG</th></tr>`;
+            <tr><th>Functions and Loops</th><th>Canonical</th><th>Perfect</th><th>Exit</th>
+            <th>IO</th><th>Readonly</th><th>UnsafeCFG</th></tr>`;
     let funclen = funclst.Functions.length;
     for (let i = 0; i < funclen; i++) {
       let func = funclst.Functions[i];
       let looplen = func.Loops.length;
-      let linkInOut = {command: 'tsar.callee.func', project: project, title: 'CalleeFunc',
+      let linkInOut = {command: 'tsar.callee.func', project: project, title: 'View statements which perform in/out operations.',
           query: JSON.stringify({ID: '', FuncID: func.ID, Attr: [msg.StatementAttr.InOut]})};
-      let linkNoReturn = {command: 'tsar.callee.func', project: project, title: 'CalleeFunc',
+      let linkUnsafeCFG = {command: 'tsar.callee.func', project: project, title: 'View statements which lead to unsafe control flow.',
           query: JSON.stringify({ID: '', FuncID: func.ID, Attr: [msg.StatementAttr.UnsafeCFG]})};
+      let linkExit = {command: 'tsar.callee.func', project: project, title: 'View all possible exits from this region.',
+          query: JSON.stringify({ID: '', FuncID: func.ID, Attr: [msg.StatementAttr.Exit]})};
       body += `<tr><td>`;
       if (looplen) {
         if (func.Loops[0].Hide)
@@ -126,15 +128,13 @@ export class LoopTreeProvider implements ProjectContentProvider{
       }
       body += `${func.Name} ` + getStrLocation(project, func.StartLocation) + ` - ` +
           getStrLocation(project, func.EndLocation) + `</td>
-          <td>&#10003</td>
-          <td>N/A</td>
-          <td>N/A</td>
-          <td>N/A</td>
-          <td class='level'>0</td>` +
-          checkTrait(func.Traits.InOut, linkInOut)
-          +`<td>N/A</td>` +
+          <td></td>
+          <td></td>`;
+      body += `<td>${commandLink('tsar.callee.func', project,
+          linkExit.title, func.Exit === null ? '?' : func.Exit.toString(), linkExit.query)}</td>`;
+      body += checkTrait(func.Traits.InOut, linkInOut) +
           checkTrait(func.Traits.Readonly) +
-          checkTrait(func.Traits.UnsafeCFG, linkNoReturn) + `</tr>`;
+          checkTrait(func.Traits.UnsafeCFG, linkUnsafeCFG) + `</tr>`;
       for (let j = 0; j < looplen; j++) {
         let loop = func.Loops[j];
         if (loop.Hide == undefined && loop.Level != 1)
@@ -156,7 +156,9 @@ export class LoopTreeProvider implements ProjectContentProvider{
         Hide = false;
         linkInOut.query = JSON.stringify(
             {ID: '', FuncID: func.ID, LoopID: loop.ID, Attr: [msg.StatementAttr.InOut]});
-        linkNoReturn.query = JSON.stringify(
+        linkUnsafeCFG.query = JSON.stringify(
+            {ID: '', FuncID: func.ID, LoopID: loop.ID, Attr: [msg.StatementAttr.UnsafeCFG]});
+        linkExit.query = JSON.stringify(
             {ID: '', FuncID: func.ID, LoopID: loop.ID, Attr: [msg.StatementAttr.Exit]});
         body += `<tr><td>`;
         for (let k = 0; k < loop.Level; k++) {
@@ -173,23 +175,13 @@ export class LoopTreeProvider implements ProjectContentProvider{
         body += `loop in ${func.Name} at ` +
             getStrLocation(project, loop.StartLocation) + ` - ` +
             getStrLocation(project, loop.EndLocation) + `</td>` +
-            checkTrait(loop.Traits.IsAnalyzed);
-        if (loop.Traits.IsAnalyzed == "Yes") {
-          body += checkTrait(loop.Traits.Canonical) + checkTrait(loop.Traits.Perfect);
-        } else {
-          body += `<td>N/A</td><td>N/A</td>`;
-        }
-        if (loop.Exit > 1) {
-          body += `<td>${commandLink('tsar.callee.func', project,
-              'CalleeFunc', `${loop.Exit}`, linkNoReturn.query)}</td>`;
-        } else {
-          body += `<td>${loop.Exit}</td>`;
-        }
-        body += `<td>${loop.Level}</td>` +
-            checkTrait(loop.Traits.InOut, linkInOut) +
-            `<td>${loop.Type}</td>
-            <td>N/A</td>
-            <td>N/A</td></tr>`;
+            checkTrait(loop.Traits.Canonical) + checkTrait(loop.Traits.Perfect);
+        body += `<td>${commandLink('tsar.callee.func', project,
+            linkExit.title, loop.Exit === null ? '?' : loop.Exit.toString(), linkExit.query)}</td>`;
+        body += checkTrait(loop.Traits.InOut, linkInOut) +
+            `<td></td>` +
+            checkTrait(loop.Traits.UnsafeCFG, linkUnsafeCFG) +
+            `</tr>`;
       }
     }
     body += `</table>`;

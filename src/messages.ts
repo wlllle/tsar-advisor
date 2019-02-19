@@ -223,6 +223,7 @@ export interface TraitsLoops {
   Perfect: string;
   InOut: string;
   Canonical: string;
+  UnsafeCFG : string;
 }
 
 export interface Loop {
@@ -272,6 +273,7 @@ export interface Function {
   EndLocation: Location;
   Loops: Loop [];
   Traits: FunctionTraits;
+  Exit: number;
 }
 
 export class FunctionList {
