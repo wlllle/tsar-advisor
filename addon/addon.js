@@ -38,7 +38,11 @@ do {
 } while (opt);
 
 let addonDir = path.resolve(__dirname, 'build', config);
-let sharedConfigDir = path.join(sharedDir, config);
+const os = require('os').platform();
+let sharedConfigDir = sharedDir;
+if (os == 'win32') {
+  sharedConfigDir = path.join(sharedDir, config);
+}
 
 // Check scrip arguments.
 try {
@@ -118,7 +122,6 @@ function copyShared() {
 
 function nodeGypExec(cmd, args, cb_stdout, cb_end) {
   const spawn = require('child_process').spawn;
-  const os = require('os').platform();
   let child;
   let nodeGypArgs = [
     'rebuild',
