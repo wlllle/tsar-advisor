@@ -44,8 +44,12 @@ export class ProjectEngine {
     this._context = context;
     if (!process.platform.match(/^win/i)) {
       this._environment = process.env;
+      if (this._environment['LD_LIBRARY_PATH'] === undefined)
+        this._environment['LD_LIBRARY_PATH'] = __dirname;
+      else
+        this._environment['LD_LIBRARY_PATH'] += `:${__dirname}`;
       log.Log.logs[0].write(
-        log.Message.environment.replace('{0}', log.Message.generalEnv));
+        log.Message.environment.replace('{0}', `LD_LIBRARY_PATH=${this._environment['LD_LIBRARY_PATH']}`));
       return;
     }
     this._environment = establishVSEnvironment((err) => {
