@@ -2,8 +2,6 @@
 //
 //                           TSAR Advisor (SAPFOR)
 //
-//===----------------------------------------------------------------------===//
-//
 // This implements active project controller and single project representation.
 //
 //===----------------------------------------------------------------------===//
@@ -15,10 +13,9 @@ import * as fs from 'fs';
 import * as net from 'net';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import {encodeLocation, decodeLocation, establishVSEnvironment} from './functions';
+import {establishVSEnvironment} from './functions';
 import {ProjectProvider} from './general';
 import * as log from './log';
-import {LoopTreeProvider} from './loopTree';
 import * as msg from './messages';
 
 /**
@@ -34,11 +31,27 @@ export class ProjectEngine {
     msg.CalleeFuncList
   );
   private _context: vscode.ExtensionContext;
-  private _providers = {};
+  private _providers = new Map<string, ProjectContentProvider>();
   private _environment = {};
 
   /**
-   * Creates engine is a specified extension context.
+   * Build internal identifier for a specified project uri.
+   */
+  private static _projectID(uri: vscode.Uri): string {
+    return uri.with({query: null}).toString();
+  }
+
+  /**
+   * Return true if a specified object represent URI.
+   *
+   */
+  private static _isUri(obj: vscode.TextDocument | Project | vscode.Uri):
+     obj is vscode.Uri {
+    return (obj as vscode.Uri).with !== undefined;
+  }
+
+  /**
+   * Create engine is a specified extension context.
    */
   constructor(context: vscode.ExtensionContext) {
     this._context = context;
@@ -73,44 +86,42 @@ export class ProjectEngine {
   }
 
   /**
-   * Destroys engine.
+   * Destroy engine.
    */
   dispose () {
+    this._projects.forEach(project => {project.dispose()});
     this._projects.clear();
+    this._providers.clear();
     this._parser.dispose();
   }
 
   /**
    * Register list of project content providers.
    *
-   * Only these  content providers can be used to show some information about
+   * Only these content providers can be used to show some information about
    * analyzed project.
    */
   register(...args: [string, ProjectContentProvider][]) {
-    for (let arg of args) {
-      this._context.subscriptions.push(
-        vscode.workspace.registerTextDocumentContentProvider(
-          arg[0], arg[1]));
+    for (let arg of args)
       this._providers[arg[0]] = arg[1];
-    }
   }
 
   /**
-   * Returns true if analysis of a specified project has been already activated.
+   * Return true if analysis of a specified project has been already activated.
    */
   isActive(uri: vscode.Uri): boolean {
-    return this._projects.has(uri.toString());
+    return this._projects.has(ProjectEngine._projectID(uri));
   }
 
   /**
-   * Returns project with a specified URI.
+   * Return project with a specified URI.
    */
   project(uri: vscode.Uri): Project|undefined {
-    return this._projects.get(uri.toString());
+    return this._projects.get(ProjectEngine._projectID(uri));
   }
 
   /**
-   * Starts analysis of a specified project.
+   * Start analysis of a specified project.
    *
    * TODO (kaniandr@gmail.com): currently each project consists of a single
    * file, update to support projects configured with a help of *.json file.
@@ -119,10 +130,8 @@ export class ProjectEngine {
     return new Promise((resolve, reject) => {
       let project = this.project(doc.uri);
       if (project !== undefined) {
-        vscode.commands.executeCommand('vscode.previewHtml',
-          encodeLocation(ProjectProvider.scheme, project.uri),
-          vscode.ViewColumn.Two,
-          `${log.Extension.displayName} | ${project.prjname}`);
+        let state = project.providerState(ProjectProvider.scheme);
+        state.provider.update(project);
         return undefined;
       }
       let check = this._checkDocument(doc);
@@ -138,32 +147,36 @@ export class ProjectEngine {
   }
 
   /**
-   * Stops analysis of a specified project.
+   * Stop analysis of a specified project.
    */
-  stop(doc: vscode.TextDocument) {
-   this._stop(doc.uri);
+  stop(target: vscode.TextDocument | Project | vscode.Uri) {
+    if (ProjectEngine._isUri(target))
+      this._stop(target)
+    else
+      this._stop(target.uri);
   }
 
   /**
-   * Stops analysis of a specified project.
+   * Stop analysis of a specified project.
    */
   private _stop(uri: vscode.Uri) {
     let project = this.project(uri);
     if (project === undefined)
       return;
-    let dir = project.uri.toString();;
+    let id = ProjectEngine._projectID(project.uri);
+    this._projects.delete(id);
     project.dispose();
-    this._projects.delete(project.uri.toString());
-    log.Log.logs[0].write(log.Message.close.replace('{0}', dir));
+    log.Log.logs[0].write(
+      log.Message.close.replace('{0}', project.uri.toString()));
   }
 
   /**
-  *  Checks that a specified document can be analyzed.
+  *  Check that a specified document can be analyzed.
   */
   private _checkDocument(doc: vscode.TextDocument): msg.Diagnostic|undefined {
     let uri = doc.uri;
     let diag = new msg.Diagnostic;
-    /// TODO (kaniadnr@gmail.com): suggest save it and open appropriate dialog.
+    /// TODO (kaniandr@gmail.com): suggest save it and open appropriate dialog.
     if (doc.isUntitled)
       diag.Error.push(log.Error.untitled.replace('{0}', uri.fsPath));
     if (!log.Extension.langauges[doc.languageId])
@@ -172,7 +185,7 @@ export class ProjectEngine {
   }
 
   /**
-   *  Creates directory for a project-specific files, returns full path of
+   *  Create directory for a project-specific files, returns full path of
    *  created directory on success, otherwise returns appropriate diagnostics.
    */
   private _makeProjectDir(pathToPrj: string): msg.Diagnostic|string {
@@ -198,7 +211,7 @@ export class ProjectEngine {
     return prjDir;
   }
   /**
-   * Starts server to analyze project and initialize connection between the
+   * Start server to analyze project and initialize connection between the
    * server and adviser, returns true on success.
    *
    * If some errors occur during initialization they will be treated
@@ -231,9 +244,13 @@ export class ProjectEngine {
           client = net.connect(pipe, () => {client.setEncoding('utf8')});
           project = new Project(uri, prjDir, client, server);
           this._context.subscriptions.push(project);
-          for (let scheme in this._providers)
-            project.register(scheme, this._providers[scheme].state());
-          this._projects.set(uri.toString(), project);
+          for (let scheme in this._providers) {
+            let provider= this._providers[scheme];
+            provider.onDidAriseInternalError(this._internalError,
+              this, this._context.subscriptions);
+            project.register(scheme, provider.state());
+          }
+          this._projects.set(ProjectEngine._projectID(uri), project);
           client.on('error', (err) => {this._internalError(err)});
           client.on('data', (data:string) => {
             log.Log.logs[0].write(log.Message.server.replace('{0}', data));
@@ -241,14 +258,13 @@ export class ProjectEngine {
           client.on('data', this._onResponse.bind(this, project, client));
         } else if (data === log.Server.connection) {
           log.Log.logs[0].write(log.Message.connection);
-          vscode.commands.executeCommand('vscode.previewHtml',
-            encodeLocation(ProjectProvider.scheme, project.uri),
-            vscode.ViewColumn.Two,
-            `${log.Extension.displayName} | ${project.prjname}`).
-          then((success) => {
-            log.Log.logs[0].write(log.Message.active.replace('{0}', project.uri.toString()));
-            this._runAnalysis(project);
-          }, null);
+          log.Log.logs[0].write(
+            log.Message.active.replace('{0}', project.uri.toString()));
+          let state = project.providerState(ProjectProvider.scheme);
+          state.onDidDisposeContent(() => {this.stop(project)},
+            null, this._context.subscriptions);
+          state.active = true;
+          this._runAnalysis(project);
         } else {
           let match = data.match(/^\s*(\w*)\s*{\s*(.*)\s*}\s*$/);
           if (!match)
@@ -272,7 +288,7 @@ export class ProjectEngine {
   }
 
   /**
-   * Returns pipe to exchange messages between client (GUI) and server (TSAR).
+   * Return pipe to exchange messages between client (GUI) and server (TSAR).
    * TODO (kaniandr@gmail.com): For Linux OS pipe is a file, so check that it
    * does not exist.
    */
@@ -297,7 +313,7 @@ export class ProjectEngine {
   }
 
   /**
-   * Evaluates response received from the server.
+   * Evaluate response received from the server.
    */
   private _onResponse(project: Project, client: net.Socket, response: string) {
     try {
@@ -340,7 +356,7 @@ export class ProjectEngine {
   }
 
   /**
-   * Shows diagnostics to a user.
+   * Show diagnostics to a user.
    */
   private _diagnostic(project: Project, diag: msg.Diagnostic) {
     switch (diag.Status) {
@@ -365,11 +381,15 @@ export class ProjectEngine {
 }
 
 /**
- * This text document content provider allows to add readonly documents
- * which represents project traits to the editor.
+ * This content provider allows to add readonly documents
+ * which represent project traits to the editor.
  */
-export interface ProjectContentProvider
-    extends vscode.TextDocumentContentProvider {
+export interface ProjectContentProvider {
+  /**
+   * Fired when an internal error occured.
+   */
+  readonly onDidAriseInternalError : vscode.Event<Error>;
+
   /**
    * Returns new description of a project content provider state.
    */
@@ -378,7 +398,12 @@ export interface ProjectContentProvider
   /**
    * Update visible content for a specified project.
    */
-  update(project: Project);
+  update(project: Project): any;
+
+  /**
+   *  Dispose provider.
+   */
+  dispose(): any;
 }
 
 /**
@@ -388,10 +413,40 @@ export interface ProjectContentProviderState {
   /**
    * Content provider with a current state.
    */
-  provider: ProjectContentProvider;
+  readonly provider: ProjectContentProvider;
 
   /**
-   * Disposes the state.
+   * Fired when a visible content is disposed.
+   *
+   * It should not dispose the whole state.
+   * Implementation must allow to safely use state after it.
+   */
+  readonly onDidDisposeContent: vscode.Event<void>;
+
+  /**
+   * True if actual content is available, otherwise some data
+   * should be loaded from server.
+   */
+  readonly actual: boolean;
+
+  /**
+   * Access 'active' property of the state.
+   *
+   * Return `true` if state is active.
+   * 
+   * Usage example. If set to `true` fire event `onDidChangeActiveState` event
+   * and notify listeners that the state wait for content to show. Project is
+   * listening for this event and try to show content on activation.
+   */
+  active: boolean;
+
+  /**
+   * Fired when state 'active' property is changed.
+   */
+  readonly onDidChangeActiveState : vscode.Event<boolean>;
+
+  /**
+   * Dispose of the state.
    *
    * Do not dispose providers when state is disposed.
    */
@@ -416,9 +471,10 @@ export class Project {
   private _providers = new Map<string, ProjectContentProviderState>();
   private _output: vscode.OutputChannel
   private _disposable: vscode.Disposable;
+  private _isDisposed = false;
 
   /**
-   * Creates a project with a specified uri.
+   * Create a project with a specified uri.
    *
    * @param projectUri Unique identifier of a project.
    * @param projectDir Basename of a directory which will contain project
@@ -438,9 +494,12 @@ export class Project {
   }
 
   /**
-   * Disposes project and its data (sockets, processes, windows).
+   * Dispose project and its data (sockets, processes, windows).
    */
   dispose() {
+    if (this._isDisposed)
+      return;
+    this._isDisposed = true;
     this._providers.clear();
     this._output.hide();
     this._client.end();
@@ -449,7 +508,7 @@ export class Project {
   }
 
   /**
-   * Sends request to a server.
+   * Send request to a server.
    */
   send(request: any) {
     if (!this._client.write(JSON.stringify(request) + log.Project.delimiter))
@@ -457,15 +516,19 @@ export class Project {
   }
 
   /**
-   * Registers content provider with a specified base scheme.
+   * Register content provider with a specified base scheme.
    */
   register(scheme: string, state: ProjectContentProviderState) {
     this._providers.set(scheme, state);
     this._disposable = vscode.Disposable.from(this._disposable, state);
+    state.onDidChangeActiveState((isActive: boolean) => {
+      if (isActive)
+        state.provider.update(this);
+    });
   }
 
   /**
-   * Returns state of content provider with a specified scheme.
+   * Return state of content provider with a specified scheme.
    *
    * The provider with a specified scheme must be at first registered in a
    * project with register() method.
@@ -475,7 +538,7 @@ export class Project {
   }
 
   /**
-   * Updates provider with a specified scheme.
+   * Update provider with a specified scheme.
    *
    * The specified response will be stored in a queue of response and can be
    * accessed via response() getter from provider.
@@ -491,7 +554,7 @@ export class Project {
   }
 
   /**
-   * Updates all registered providers.
+   * Update all registered providers.
    *
    * The specified response will be stored in a queue of response and can be
    * accessed via response() getter from provider.
@@ -506,28 +569,28 @@ export class Project {
   }
 
   /**
-   * Returns number of all responses some of which have been already evaluated
+   * Return number of all responses some of which have been already evaluated
    * and other are new responses.
    */
   responseNumber(): number { return this._responses.length; }
 
   /**
-   * Returns project unique identifier.
+   * Return project unique identifier.
    */
   get uri(): vscode.Uri { return this._prjUri; }
 
   /**
-   * Returns project internal directory name.
+   * Return project internal directory name.
    */
   get dirname(): string { return this._prjDir; }
 
   /**
-   * Returns project name.
+   * Return project name.
    */
   get prjname(): string { return path.basename(this._prjUri.fsPath); }
 
   /**
-   * Returns the first response which has not been evaluated yet, to mark that
+   * Return the first response which has not been evaluated yet, to mark that
    * it is evaluated use pop() function.
    */
   get response(): any|undefined {
@@ -536,7 +599,7 @@ export class Project {
   }
 
   /**
-   * Returns output channel to represent terminal output.
+   * Return output channel to represent terminal output.
    */
   get output(): vscode.OutputChannel {return this._output;}
 

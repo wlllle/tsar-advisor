@@ -1,9 +1,6 @@
-
 //===--- general.ts ----------- General Provider ------------ TypeScript --===//
 //
 //                           TSAR Advisor (SAPFOR)
-//
-//===----------------------------------------------------------------------===//
 //
 // This implements provider for a general information about analyzed project.
 //
@@ -12,86 +9,72 @@
 'use strict'
 
 import * as path from 'path';
-import * as vscode from 'vscode';
-import {decodeLocation, encodeLocation,
-  projectLink, commandLink, numberHtml, styleLink,
-  unavailableHtml, waitHtml} from './functions';
+import {projectLink, commandLink, numberHtml, styleLink,
+  UpdateUriFunc} from './functions';
 import * as log from './log';
 import * as msg from './messages';
-import {ProjectEngine, Project,
-  ProjectContentProvider, ProjectContentProviderState} from './project';
-
-/**
- * State of a project content provider.
- */
-class ProjectProviderState implements ProjectContentProviderState {
-  private _provider: ProjectProvider;
-  constructor(provider: ProjectProvider) { this._provider = provider; }
-  response: any;
-  get provider (): ProjectProvider { return this._provider;}
-  dispose(): any {}
-}
+import {Project} from './project';
+import {ProjectWebviewProvider} from './webviewProvider';
 
 /**
  * Provides a general information about analyzed project.
  */
-export class ProjectProvider implements ProjectContentProvider{
+export class ProjectProvider extends ProjectWebviewProvider {
   static scheme = "tsar-main";
-  private _onDidChange = new vscode.EventEmitter<vscode.Uri>();
-  private _engine: ProjectEngine;
 
-  constructor(engine: ProjectEngine) { this._engine = engine; }
-  dispose() { this._onDidChange.dispose(); }
+  public scheme(): string { return ProjectProvider.scheme; }
 
-  /**
-   * Returns new description of a project content provider state.
-   */
-  state(): ProjectProviderState {
-    return new ProjectProviderState(this);
+  protected _title(): string { return log.Summary.title; }
+
+  protected _needToHandle(response: any): boolean {
+    return response instanceof msg.Statistic;
   }
 
   /**
-   * Informs listeners about content changes.
-   *
-   * If this provider has been registered after call of this method
-   * provideTextDocumentContent() will be called to update visible content.
+   * Provides html for analysis statistic.
    */
-  update(project: Project) {
-    this._onDidChange.fire(encodeLocation(ProjectProvider.scheme, project.uri));
+  protected _provideContent(project: Project, stat: msg.Statistic,
+      asWebviewUri: UpdateUriFunc): string {
+    let loopNotAnalyzed = stat.Loops[msg.Analysis.No];
+    let loopCount = stat.Loops[msg.Analysis.Yes] + loopNotAnalyzed;
+    let htmlLpNotAnalyzed = loopNotAnalyzed == 0 ? '' :
+      ' (' +  numberHtml(loopNotAnalyzed) + (loopNotAnalyzed !==1 ?
+        ' loops have' : ' loop has') + ' not been analyzed)';
+    let varNotAnalyzed = stat.Variables[msg.Analysis.No];
+    let varCount = stat.Variables[msg.Analysis.Yes] + varNotAnalyzed;
+    let htmlVarNotAnalyzed = varNotAnalyzed == 0 ? '' :
+      ' (' +  numberHtml(varNotAnalyzed) + (varNotAnalyzed !==1 ?
+        ' variables have' : ' variable has') + ' not been analyzed)';
+    return `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        ${styleLink(asWebviewUri)}
+      </head>
+      <body>
+        <div class="summary-post">
+          <h1> ${this._title().replace('{0}', projectLink(project))} </h1>
+          ${this._listOfFiles(stat.Files)}
+          <p>
+            Analyzed files comprise
+              ${numberHtml(stat.Functions)} ${commandLink(
+                  'tsar.function.list', project,
+                  log.FunctionList.title.replace(
+                    '{0}', path.basename(project.prjname)),
+                  stat.Functions !== 1 ? 'functions' : 'function', '')}
+            with
+            ${numberHtml(varCount)} ${varCount !== 1 ? 'variables' : 'variable'}${htmlVarNotAnalyzed}
+            and
+              ${numberHtml(loopCount)} ${loopCount !== 1 ? 'loops' : 'loop'}${htmlLpNotAnalyzed}.
+          </p>
+          ${this._listOfTraits(stat)}
+        </div>
+      </body>
+    </html>`;
   }
 
   /**
-   * Returns event to subscribe for content changes.
-   */
-  get onDidChange(): vscode.Event<vscode.Uri> {
-    return this._onDidChange.event;
-  }
-
-  /**
-   * Provides html with general information about analyzed project.
-   */
-  public provideTextDocumentContent(uri: vscode.Uri): Thenable<string>|string {
-    let prjUri = <vscode.Uri>decodeLocation(uri).shift();
-    let project = this._engine.project(prjUri);
-    if (project === undefined)
-      return unavailableHtml(prjUri);
-    let state = <ProjectProviderState>project.providerState(ProjectProvider.scheme);
-    // If there were some responses and they already evaluated then let us
-    // evaluate the last one.
-    if (project.response !== undefined &&
-        project.response instanceof msg.Statistic)
-      state.response = project.response;
-    // Prevents asynchronous changes of state.response value.
-    let response = state.response;
-    return new Promise((resolve, reject) => {
-      if (response !== undefined && response instanceof msg.Statistic)
-        return resolve(this._provideStatistic(project, response));
-      return resolve(waitHtml(log.Summary.title, project));
-    });
-  }
-
-  /**
-   * Returns html string represented statistic of analyzed files.
+   * Return html string represented statistic of analyzed files.
    */
   private _listOfFiles(files: {string:number}): string {
     let html = '<ul class="summary-item-list">';
@@ -106,7 +89,7 @@ export class ProjectProvider implements ProjectContentProvider{
   }
 
   /**
-   * Returns html string represented statistic of explored traits.
+   * Return html string represented statistic of explored traits.
    */
   private _listOfTraits(stat: msg.Statistic): string {
     let html = '<ul class="summary-item-list">';
@@ -140,47 +123,5 @@ export class ProjectProvider implements ProjectContentProvider{
     html += '</ul>';
     html = `<p>The following loop traits have been explored (total ${numberHtml(count)}):</p>${html}`;
     return html;
-  }
-
-  /**
-   * Provides html for analysis statistic.
-   */
-  private _provideStatistic(project: Project, stat: msg.Statistic): string {
-    let loopNotAnalyzed = stat.Loops[msg.Analysis.No];
-    let loopCount = stat.Loops[msg.Analysis.Yes] + loopNotAnalyzed;
-    let htmlLpNotAnalyzed = loopNotAnalyzed == 0 ? '' :
-      ' (' +  numberHtml(loopNotAnalyzed) + (loopNotAnalyzed !==1 ?
-        ' loops have' : ' loop has') + ' not been analyzed)';
-    let varNotAnalyzed = stat.Variables[msg.Analysis.No];
-    let varCount = stat.Variables[msg.Analysis.Yes] + varNotAnalyzed;
-    let htmlVarNotAnalyzed = varNotAnalyzed == 0 ? '' :
-      ' (' +  numberHtml(varNotAnalyzed) + (varNotAnalyzed !==1 ?
-        ' variables have' : ' variable has') + ' not been analyzed)';
-    return `
-    <!DOCTYPE html>
-    <html>
-      <head>
-        ${styleLink()}
-      </head>
-      <body>
-        <div class="summary-post">
-          <h1> Analysis result summary for ${projectLink(project)} </h1>
-          ${this._listOfFiles(stat.Files)}
-          <p>
-            Analyzed files comprise
-              ${numberHtml(stat.Functions)} ${commandLink(
-                  'tsar.function.list', project,
-                  log.FunctionList.title.replace(
-                    '{0}', path.basename(project.prjname)),
-                  stat.Functions !== 1 ? 'functions' : 'function', '')}
-            with
-            ${numberHtml(varCount)} ${varCount !== 1 ? 'variables' : 'variable'}${htmlVarNotAnalyzed}
-            and
-              ${numberHtml(loopCount)} ${loopCount !== 1 ? 'loops' : 'loop'}${htmlLpNotAnalyzed}.
-          </p>
-          ${this._listOfTraits(stat)}
-        </div>
-      </body>
-    </html>`;
   }
 }

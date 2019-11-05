@@ -126,7 +126,7 @@ function nodeGypExec(cmd, args, cb_stdout, cb_end) {
   let nodeGypArgs = [
     'rebuild',
     '-C', __dirname,
-    '--target=3.1.2',
+    '--target=4.2.10',
     '--dist-url=https://atom.io/download/atom-shell'
   ];
   if (config === 'Debug')

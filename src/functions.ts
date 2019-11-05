@@ -97,11 +97,11 @@ export function establishVSEnvironment(onerror: (err: any) => any): any {
  */
 export function commandLink(
     command: string, project: Project, title: string, body: string, query: string): string {
-      project.uri.query = query;
+  let uri = project.uri.with({query: query});
   return `
     <a class="source-link"
        href="${encodeURI(
-         'command:' + command + '?' + JSON.stringify(project.uri))}"
+         'command:' + command + '?' + JSON.stringify(uri))}"
        title="${title}">
       ${body}</a>`;
 }
@@ -128,11 +128,18 @@ export function numberHtml(n: number): string {
   return `<span class="number">${n}</span>`;
 }
 
+ /**
+  * A function to update uri before it is inserted into html.
+  */
+export type UpdateUriFunc = (uri: vscode.Uri) => vscode.Uri;
+
 /**
  * Returns html representation of a link to a style-file.
+ * @param updateUri A function to update uri before it is inserted into html.
  */
-export function styleLink(): string {
-  return `<link href= ${vscode.Uri.file(log.Extension.style)} rel="stylesheet" type="text/css"/>`;
+export function styleLink(
+    updateUri: UpdateUriFunc = (uri => { return uri })): string {
+  return `<link href= ${updateUri(vscode.Uri.file(log.Extension.style))} rel="stylesheet" type="text/css"/>`;
 }
 
 /**
@@ -161,13 +168,15 @@ export function unavailableHtml(uri: vscode.Uri): string {
 
 /**
  * Provides html for welcome information.
+ * @param updateUri A function to update uri before it is inserted into html.
  */
-export function waitHtml(title: string, project: Project): string {
+export function waitHtml(title: string, project: Project,
+    updateUri: UpdateUriFunc = (uri => {return uri})): string {
   return `
     <!DOCTYPE html>
     <html>
       <head>
-        ${styleLink()}
+        ${styleLink(updateUri)}
       </head>
       <body>
         <div class="summary-post">

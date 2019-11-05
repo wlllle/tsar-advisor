@@ -1,91 +1,72 @@
-'use strict'
+//===- loopTree.ts --------------- Loop Tree Provider ------- TypeScript --===//
+//
+//                           TSAR Advisor (SAPFOR)
+//
+// This file implements provider to show list of functions in a project and
+// a loop tree for each function. Some general trais are also shown.
+//
+//===----------------------------------------------------------------------===//
+
+'use strict';
 
 import * as vscode from 'vscode';
 import * as path from 'path';
-import {decodeLocation, encodeLocation,
-  projectLink, moveToCode, commandLink, numberHtml, styleLink,
-  unavailableHtml, waitHtml, checkTrait, getStrLocation} from './functions';
+import {UpdateUriFunc, commandLink, checkTrait,
+  getStrLocation} from './functions';
 import * as log from './log';
 import * as msg from './messages';
-import {ProjectEngine, Project,
-  ProjectContentProvider, ProjectContentProviderState} from './project';
+import {Project} from './project';
+import {ProjectWebviewProviderState,
+  ProjectWebviewProvider} from './webviewProvider';
 
-/**
- * State of a loop tree content provider.
- */
-export class LoopTreeProviderState implements ProjectContentProviderState {
-  private _provider: LoopTreeProvider;
-  constructor(provider: LoopTreeProvider) { this._provider = provider; }
-  response: any;
-  get provider (): LoopTreeProvider { return this._provider;}
-  dispose(): any {}
+class LoopTreeProviderState extends ProjectWebviewProviderState<LoopTreeProvider> {
+  get actual(): boolean { return this.data !== undefined; }
+
+  onResponse(response: any): Thenable<any> {
+    return new Promise(resolve => {
+      if (response !== undefined) {
+        if (response instanceof msg.FunctionList) {
+          this._data = response;
+        } else if (this._data != undefined) {
+          // Add loop tree to the function representation.
+          let looptree = response as msg.LoopTree;
+          for (let f of (<msg.FunctionList>this._data).Functions) {
+            if (f.ID != looptree.FunctionID)
+              continue;
+            f.Loops = looptree.Loops;
+            break;
+          }
+        }
+      }
+      resolve(this._data);
+    });
+  }
 }
 
 /**
  * Provides a general information about analyzed project.
  */
-export class LoopTreeProvider implements ProjectContentProvider{
+export class LoopTreeProvider extends ProjectWebviewProvider {
   static scheme = "tsar-looptree";
-  private _onDidChange = new vscode.EventEmitter<vscode.Uri>();
-  private _engine: ProjectEngine;
 
-  constructor(engine: ProjectEngine) { this._engine = engine; }
-  dispose() { this._onDidChange.dispose(); }
+  public scheme(): string { return LoopTreeProvider.scheme; }
 
-  /**
-   * Returns new description of a project content provider state.
-   */
-  state(): LoopTreeProviderState {
+  public state(): LoopTreeProviderState {
     return new LoopTreeProviderState(this);
   }
 
-  /**
-   * Informs listeners about content changes.
-   *
-   * If this provider has been registered after call of this method
-   * provideTextDocumentContent() will be called to update visible content.
-   */
-  update(project: Project) {
-    this._onDidChange.fire(encodeLocation(LoopTreeProvider.scheme, project.uri));
+  protected _title(): string { return log.FunctionList.title; }
+
+  protected _needToHandle(response: any): boolean {
+    return response instanceof msg.FunctionList ||
+      response instanceof msg.LoopTree;
   }
 
-  /**
-   * Returns event to subscribe for content changes.
-   */
-  get onDidChange(): vscode.Event<vscode.Uri> {
-    return this._onDidChange.event;
-  }
-
-  /**
-   * Provides html with general information about analyzed project.
-   */
-  public provideTextDocumentContent(uri: vscode.Uri): Thenable<string>|string {
-    let prjUri = <vscode.Uri>decodeLocation(uri).shift();
-    let project = this._engine.project(prjUri);
-    if (project === undefined)
-      return unavailableHtml(prjUri);
-    let state = <LoopTreeProviderState>project.providerState(LoopTreeProvider.scheme);
-    if (project.response !== undefined &&
-        project.response instanceof msg.FunctionList)
-      state.response = project.response;
-    let response = project.response;
-    return new Promise((resolve, reject) => {
-      if (response !== undefined && response instanceof msg.FunctionList) {
-        return resolve(this._provideFunctionList(project, response));
-      } else if (response !== undefined && response instanceof msg.LoopTree) {
-        return resolve(this._provideLoopTree(project, response));
-      } else if (state.response !== undefined) {
-        return resolve(this._provideFunctionList(project, state.response))
-      }
-      return resolve(waitHtml(log.FunctionList.title, project));
-    });
-  }
-
-  private _provideFunctionList(project: Project, funclst: msg.FunctionList): string {
-    let bootstrap = vscode.Uri.file(
-      path.resolve(__dirname, '..', '..', 'node_modules', 'bootstrap', 'dist'));
-    let jquery = vscode.Uri.file(
-      path.resolve(__dirname, '..', '..', 'node_modules', 'jquery', 'dist'));
+  protected _provideContent(project: Project, funclst: msg.FunctionList, asWebviewUri: UpdateUriFunc): string {
+    let bootstrap = asWebviewUri(vscode.Uri.file(
+      path.resolve(__dirname, '..', '..', 'node_modules', 'bootstrap', 'dist')));
+    let jquery = asWebviewUri(vscode.Uri.file(
+      path.resolve(__dirname, '..', '..', 'node_modules', 'jquery', 'dist')));
     let bootstrapHeader =
       `<!DOCTYPE html>
       <html lang="en">
@@ -186,18 +167,5 @@ export class LoopTreeProvider implements ProjectContentProvider{
     }
     body += `</table>`;
     return bootstrapHeader + body + bootstrapFooter;
-  }
-
-  private _provideLoopTree(project: Project, func: msg.LoopTree): string {
-    let state = <LoopTreeProviderState>project.providerState(LoopTreeProvider.scheme);
-    let funclist: msg.FunctionList = state.response;
-    let funclen = funclist.Functions.length;
-    for (let i = 0; i < funclen; i++) {
-      if (funclist.Functions[i].ID != func.FunctionID)
-        continue;
-      funclist.Functions[i].Loops = func.Loops;
-      return this._provideFunctionList(project, funclist);
-    }
-    return this._provideFunctionList(project, funclist);
   }
 }

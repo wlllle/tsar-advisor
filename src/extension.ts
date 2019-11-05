@@ -2,8 +2,6 @@
 //
 //                           TSAR Advisor (SAPFOR)
 //
-//===----------------------------------------------------------------------===//
-//
 // This is a start point of the extension.
 //
 //===----------------------------------------------------------------------===//
@@ -13,16 +11,13 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
-import * as net from 'net';
-import {encodeLocation} from './functions';
-import {ProjectProvider} from './general';
 import * as log from './log';
-import {LoopTreeProvider, LoopTreeProviderState} from './loopTree';
+import {LoopTreeProvider} from './loopTree';
 import * as msg from './messages';
-import {ProjectEngine} from './project';
+import {ProjectEngine, Project} from './project';
+import {ProjectWebviewProviderState} from './webviewProvider';
+import {ProjectProvider} from './general';
 import {CalleeFuncProvider, CalleeFuncProviderState} from './calleeFunc';
-
-
 
 /**
  * Open log file (log.Extension.log), returns true on success.
@@ -52,15 +47,19 @@ function openLog(): boolean {
   return true;
 }
 
+  function isUri(pet: vscode.TextDocument | Project | vscode.Uri): pet is vscode.Uri {
+    return (pet as vscode.Uri) !== undefined;
+  }
+
 export function activate(context: vscode.ExtensionContext) {
   if (!openLog())
     return;
   log.Log.logs[0].write(log.Message.extension);
   let engine = new ProjectEngine(context);
   engine.register(
-    [ProjectProvider.scheme, new ProjectProvider(engine)],
-    [CalleeFuncProvider.scheme, new CalleeFuncProvider(engine)],
-    [LoopTreeProvider.scheme, new LoopTreeProvider(engine)]
+    [ProjectProvider.scheme, new ProjectProvider],
+    [CalleeFuncProvider.scheme, new CalleeFuncProvider],
+    [LoopTreeProvider.scheme, new LoopTreeProvider]
   );
   let start = vscode.commands.registerCommand(
     'tsar.start', (uri:vscode.Uri) => {
@@ -81,8 +80,8 @@ export function activate(context: vscode.ExtensionContext) {
           }
         });
     });
-  let stop = vscode.commands.registerTextEditorCommand(
-    'tsar.stop', editor => {engine.stop(editor.document)});
+  let stop = vscode.commands.registerCommand(
+    'tsar.stop', (uri:vscode.Uri) => engine.stop(uri));
   let openProject = vscode.commands.registerCommand('tsar.open-project',
     (uri:vscode.Uri) => {
       vscode.workspace.openTextDocument(uri).then(
@@ -107,36 +106,27 @@ export function activate(context: vscode.ExtensionContext) {
   let showFuncList = vscode.commands.registerCommand('tsar.function.list',
     (uri:vscode.Uri) => {
       let project = engine.project(uri);
-      /// TODO (kaniandr@gmail.com) : check that project is available:
-      ///   if (project === undefined) ...
-      /// TODO (kaniandr@gmail.com) : send request if data is inconsistent only.
-      vscode.commands.executeCommand('vscode.previewHtml',
-          encodeLocation(LoopTreeProvider.scheme, project.uri),
-          vscode.ViewColumn.Two,
-          `${log.Extension.displayName} | ${project.prjname}`)
-        .then((success) => {
-          project.send(new msg.FunctionList);
-        }, null);
+      let state = project.providerState(LoopTreeProvider.scheme);
+      state.active = true;
+      if (!state.actual)
+        project.send(new msg.FunctionList);
     });
   let showLoopTree = vscode.commands.registerCommand('tsar.loop.tree',
     (uri:vscode.Uri) => {
       let project = engine.project(uri);
-      vscode.commands.executeCommand('vscode.previewHtml',
-          encodeLocation(LoopTreeProvider.scheme, project.uri),
-          vscode.ViewColumn.Two,
-          `${log.Extension.displayName} | ${project.prjname}`)
-        .then((success) => {
-          let looptree = new msg.LoopTree;
-          let query = JSON.parse(uri.query);
-          looptree.FunctionID = query.ID;
-          project.send(looptree);
-        })
-    })
+      let state = project.providerState(LoopTreeProvider.scheme);
+      state.active = true;
+      let looptree = new msg.LoopTree;
+      let query = JSON.parse(uri.query);
+      looptree.FunctionID = query.ID;
+      project.send(looptree);
+    });
   let ExpColLoopTree = vscode.commands.registerCommand('tsar.expcol.looptree',
     (uri:vscode.Uri) => {
       let project = engine.project(uri);
-      let state = <LoopTreeProviderState>project.providerState(LoopTreeProvider.scheme);
-      let response = state.response;
+      let state = project.providerState(
+        LoopTreeProvider.scheme) as ProjectWebviewProviderState<LoopTreeProvider>;
+      let response = state.data;
       let query = JSON.parse(uri.query);
       let i = 0;
       while (i < response.Functions.length && query.FuncID != response.Functions[i].ID)
@@ -163,30 +153,25 @@ export function activate(context: vscode.ExtensionContext) {
   let showCalleeFunc = vscode.commands.registerCommand('tsar.callee.func',
     (uri:vscode.Uri) => {
       let project = engine.project(uri);
-      vscode.commands.executeCommand('vscode.previewHtml',
-          encodeLocation(CalleeFuncProvider.scheme, project.uri),
-          vscode.ViewColumn.Three,
-          `${log.Extension.displayName} | ${project.prjname}`)
-        .then((success) => {
-          let funclist = new msg.CalleeFuncList;
-          let query = JSON.parse(uri.query);
-          funclist.ID = query.ID;
-          funclist.FuncID = query.FuncID;
-          funclist.Attr = query.Attr;
-          if ('LoopID' in query) {
-            funclist.LoopID = query.LoopID;
-          } else {
-            funclist.LoopID = 0;
-          }
-          if (funclist.ID == '') {
-            let state = <CalleeFuncProviderState>project.providerState(CalleeFuncProvider.scheme);
-            state.response = funclist;
-          } else {
-            let state = <CalleeFuncProviderState>project.providerState(CalleeFuncProvider.scheme);
-            state.response.ID = funclist.ID;
-          }
-          project.send(funclist);
-        })
+      let state = project.providerState(
+        CalleeFuncProvider.scheme) as CalleeFuncProviderState;
+      state.active = true;
+      let funclist = new msg.CalleeFuncList;
+      let query = JSON.parse(uri.query);
+      funclist.ID = query.ID;
+      funclist.FuncID = query.FuncID;
+      funclist.Attr = query.Attr;
+      if ('LoopID' in query) {
+        funclist.LoopID = query.LoopID;
+      } else {
+        funclist.LoopID = 0;
+      }
+      if (funclist.ID == '') {
+        state.data = funclist;
+      } else {
+        state.data.ID = funclist.ID;
+      }
+      project.send(funclist);
     });
   context.subscriptions.push(start, stop, openProject, showFuncList,
       showLoopTree, ExpColLoopTree, showCalleeFunc);
