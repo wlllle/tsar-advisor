@@ -227,7 +227,7 @@ export interface TraitsLoops {
 }
 
 export interface Loop {
-  ID: number; 
+  ID: number;
   StartLocation: Location;
   EndLocation: Location;
   Traits: TraitsLoops;

@@ -10,37 +10,104 @@
 'use strict';
 
 import * as vscode from 'vscode';
-import * as path from 'path';
-import {UpdateUriFunc, commandLink, checkTrait,
-  getStrLocation} from './functions';
+import {headHtml, UpdateUriFunc, commandLink,
+  gotoExpansionLocLink, DisposableLikeList} from './functions';
 import * as log from './log';
 import * as msg from './messages';
-import {Project} from './project';
+import {Project, ProjectEngine} from './project';
 import {ProjectWebviewProviderState,
   ProjectWebviewProvider} from './webviewProvider';
 
+export function registerCommands(engine: ProjectEngine, subscriptions: DisposableLikeList) {
+  let showFuncList = vscode.commands.registerCommand('tsar.function.list',
+    (uri:vscode.Uri) => {
+      let project = engine.project(uri);
+      let state = project.providerState(LoopTreeProvider.scheme);
+      state.active = true;
+      let request = new msg.FunctionList;
+      if (!state.actual(request))
+        project.send(request);
+    });
+  let showLoopTree = vscode.commands.registerCommand('tsar.loop.tree',
+    (uri:vscode.Uri) => {
+      let project = engine.project(uri);
+      let state = project.providerState(LoopTreeProvider.scheme);
+      state.active = true;
+      let looptree = new msg.LoopTree;
+      let query = JSON.parse(uri.query);
+      looptree.FunctionID = query.ID;
+      if (!state.actual(looptree))
+        project.send(looptree);
+    });
+  subscriptions.push(showFuncList, showLoopTree);
+ }
+
+interface Info {
+  ShowSubtree: boolean;
+  Function: msg.Function;
+};
+
+interface Data {
+  FunctionList: msg.FunctionList;
+  Info: Map<msg.Function|msg.Loop,Info>;
+};
+
 class LoopTreeProviderState extends ProjectWebviewProviderState<LoopTreeProvider> {
-  get actual(): boolean { return this.data !== undefined; }
+  actual(request: any): boolean {
+    if (request instanceof msg.FunctionList)
+      return this.data !== undefined;
+    if (request instanceof msg.LoopTree) {
+      let f = (this._data as Data).FunctionList.Functions.find(
+        f => { return f.ID == request.FunctionID});
+      return f === undefined ||
+        (f.Loops != undefined && f.Loops.length > 0);
+    }
+    return false;
+  }
 
   onResponse(response: any): Thenable<any> {
     return new Promise(resolve => {
       if (response !== undefined) {
         if (response instanceof msg.FunctionList) {
-          this._data = response;
+          this._data = {
+            FunctionList: response,
+            Info: new Map<any, Info>()
+          };
         } else if (this._data != undefined) {
           // Add loop tree to the function representation.
           let looptree = response as msg.LoopTree;
-          for (let f of (<msg.FunctionList>this._data).Functions) {
+          for (let f of (this._data as Data).FunctionList.Functions) {
             if (f.ID != looptree.FunctionID)
               continue;
             f.Loops = looptree.Loops;
+            this.setSubtreeHidden(false, f);
             break;
           }
         }
       }
-      resolve(this._data);
+      resolve(this._data !== undefined
+        ? (this._data as Data).FunctionList 
+        : undefined);
     });
   }
+
+  public setSubtreeHidden(hidden: boolean, f: msg.Function, l: msg.Loop = undefined) {
+    let key = l === undefined ? f : l;
+    let info = (this._data as Data).Info.get(key);
+    if (info === undefined)
+      (this._data as Data).Info.set(key, {ShowSubtree: !hidden, Function: f});
+    else
+      info.ShowSubtree = !hidden;
+  }
+
+  public isSubtreeHidden(obj: msg.Function|msg.Loop): boolean {
+    let info = (this._data as Data).Info.get(obj);
+    return info === undefined || !info.ShowSubtree;
+  }
+}
+
+function isFunction(obj: msg.Function|msg.Loop): obj is msg.Function {
+    return (obj as msg.Function).Loops !== undefined;
 }
 
 /**
@@ -62,110 +129,263 @@ export class LoopTreeProvider extends ProjectWebviewProvider {
       response instanceof msg.LoopTree;
   }
 
-  protected _provideContent(project: Project, funclst: msg.FunctionList, asWebviewUri: UpdateUriFunc): string {
-    let bootstrap = asWebviewUri(vscode.Uri.file(
-      path.resolve(__dirname, '..', '..', 'node_modules', 'bootstrap', 'dist')));
-    let jquery = asWebviewUri(vscode.Uri.file(
-      path.resolve(__dirname, '..', '..', 'node_modules', 'jquery', 'dist')));
-    let bootstrapHeader =
-      `<!DOCTYPE html>
-      <html lang="en">
-        <head>
-          <meta charset="utf-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1">
-          <meta name="description" content="">
-          <meta name="author" content="">
-          <title>Functions and Loop Tree</title>
-          <link href="${bootstrap}/css/bootstrap.min.css" rel="stylesheet">
-          <script src="${jquery}/jquery.min.js"></script>
-          <script src="${bootstrap}/js/bootstrap.min.js"></script>
-        </head>
-        <body>`;
-    let bootstrapFooter = `</body></html>`;
-    let body =
-      `   <table class="table table-hover">
-            <tr><th>Functions and Loops</th><th>Canonical</th><th>Perfect</th><th>Exit</th>
-            <th>IO</th><th>Readonly</th><th>UnsafeCFG</th></tr>`;
-    let funclen = funclst.Functions.length;
-    for (let i = 0; i < funclen; i++) {
-      let func = funclst.Functions[i];
-      let looplen = func.Loops.length;
-      let linkInOut = {command: 'tsar.callee.func', project: project, title: 'View statements which perform in/out operations.',
-          query: JSON.stringify({ID: '', FuncID: func.ID, Attr: [msg.StatementAttr.InOut]})};
-      let linkUnsafeCFG = {command: 'tsar.callee.func', project: project, title: 'View statements which lead to unsafe control flow.',
-          query: JSON.stringify({ID: '', FuncID: func.ID, Attr: [msg.StatementAttr.UnsafeCFG]})};
-      let linkExit = {command: 'tsar.callee.func', project: project, title: 'View all possible exits from this region.',
-          query: JSON.stringify({ID: '', FuncID: func.ID, Attr: [msg.StatementAttr.Exit]})};
-      body += `<tr><td>`;
-      if (looplen) {
-        if (func.Loops[0].Hide)
-          body += `${commandLink('tsar.expcol.looptree', project, 'Expand', '+',
-              JSON.stringify({FuncID: func.ID, LoopID: 0, Hide: false}))}`;
-        else
-          body += `${commandLink('tsar.expcol.looptree', project, 'Collapse', '&minus;',
-              JSON.stringify({FuncID: func.ID, LoopID: 0, Hide: true}))}`;
-      } else if (func.Traits.Loops == "Yes") {
-        body += `${commandLink('tsar.loop.tree', project, 'Loops', '+', JSON.stringify({ID: func.ID}))}`;
-      }
-      body += `${func.Name} ` + getStrLocation(project, func.StartLocation) + ` - ` +
-          getStrLocation(project, func.EndLocation) + `</td>
-          <td></td>
-          <td></td>`;
-      body += `<td>${commandLink('tsar.callee.func', project,
-          linkExit.title, func.Exit === null ? '?' : func.Exit.toString(), linkExit.query)}</td>`;
-      body += checkTrait(func.Traits.InOut, linkInOut) +
-          checkTrait(func.Traits.Readonly) +
-          checkTrait(func.Traits.UnsafeCFG, linkUnsafeCFG) + `</tr>`;
-      for (let j = 0; j < looplen; j++) {
-        let loop = func.Loops[j];
-        if (loop.Hide == undefined && loop.Level != 1)
-          loop.Hide = true;
-        else if (loop.Hide == undefined && loop.Level == 1)
-          loop.Hide = false;
-      }
-      let Hide = false;
-      let PrevLevel = 0;
-      for (let j = 0; j < looplen; j++) {
-        let loop = func.Loops[j];
-        if (Hide && loop.Level > PrevLevel)
-          continue;
-        if (loop.Hide) {
-          Hide = true;
-          PrevLevel = loop.Level;
-          continue;
+  protected _provideContent(project: Project, funclst: msg.FunctionList,
+      asWebviewUri: UpdateUriFunc): string {
+    let state = project.providerState(
+      LoopTreeProvider.scheme) as LoopTreeProviderState;
+    this._registerListeners(state, funclst);
+    let linkInOut = {
+      command: 'tsar.callee.func',
+      project: project,
+      title: log.CallGraph.io,
+      body: '',
+      query: {ID: '', Attr: [msg.StatementAttr.InOut]}
+    };
+    let linkUnsafeCFG = {
+      command: 'tsar.callee.func',
+      project: project,
+      title: log.CallGraph.unsafeCFG,
+      body: '',
+      query: {ID: '', Attr: [msg.StatementAttr.UnsafeCFG]}
+    };
+    let linkExit = {
+      command: 'tsar.callee.func',
+      project: project,
+      title: log.CallGraph.exit,
+      body: '',
+      query: {ID: '', Attr: [msg.StatementAttr.Exit]}
+    };
+    let body = `
+    <!doctype html>
+    <html lang="en">
+      ${headHtml(asWebviewUri)}
+      <body>`;
+    body +=`
+      <script>
+        const vscode = acquireVsCodeApi();
+        window.addEventListener('message', event => {
+          const message = event.data;
+          switch (message.command) {
+            case 'Subtree':
+              const id = '#loopTree-' + message.func +
+                ('loop' in message ? '-' + message.loop : '');
+              if (message.hide === 'true')
+                $(id).collapse('hide');
+              else
+                $(id).collapse('show');
+              break;
+          }
+      });
+      </script>`;
+    body +=`
+      <div class="row font-weight-bolder border-bottom py-3 text-center">
+        <div class="col-4 text-left border-right">Functions and Loops</div>
+        <div class="col-1">Canonical</div>
+        <div class="col-1">Perfect</div>
+        <div class="col-1">Exit</div>
+        <div class="col-1">IO</div>
+        <div class="col-1">Readonly</div>
+        <div class="col-1">Unsafe CFG</div>
+      </div>`;
+    for (let func of funclst.Functions) {
+      linkInOut.query['FuncID'] = func.ID;
+      linkUnsafeCFG.query['FuncID'] = func.ID;
+      linkExit.query['FuncID'] = func.ID;
+      linkExit.body = func.Exit === null ? '?' : func.Exit.toString();
+      body += `
+      <div class="row py-2 text-center border-bottom table-row">
+        <div class="col-4 text-left border-right">`;
+      if (func.Traits.Loops == "Yes")
+        if (!func.Loops.length) {
+          body += commandLink({
+            command: 'tsar.loop.tree',
+            project,
+            title: log.FunctionList.loopTree.replace('{0}', log.FunctionList.build),
+            body: '&plus;',
+            query: JSON.stringify({ ID: func.ID })
+          });
+        } else {
+          let isSubtreeHidden = state.isSubtreeHidden(func);
+          body += `
+          <a id="collapse-loopTree-${func.ID}"
+              class = "source-link"
+              title="${log.FunctionList.loopTree.replace('{0}',
+                         isSubtreeHidden ? log.FunctionList.show 
+                                         : log.FunctionList.hide)}"
+              data-toggle="collapse" href="#loopTree-${func.ID}" role="button"
+              aria-expanded="${isSubtreeHidden ? 'false': 'true'}"
+              aria-controls="loopTree-${func.ID}">
+            ${isSubtreeHidden ? '&plus;' : '&minus;'}
+          </a>`;
         }
-        Hide = false;
-        linkInOut.query = JSON.stringify(
-            {ID: '', FuncID: func.ID, LoopID: loop.ID, Attr: [msg.StatementAttr.InOut]});
-        linkUnsafeCFG.query = JSON.stringify(
-            {ID: '', FuncID: func.ID, LoopID: loop.ID, Attr: [msg.StatementAttr.UnsafeCFG]});
-        linkExit.query = JSON.stringify(
-            {ID: '', FuncID: func.ID, LoopID: loop.ID, Attr: [msg.StatementAttr.Exit]});
-        body += `<tr><td>`;
-        for (let k = 0; k < loop.Level; k++) {
-          body += `&emsp;`;
+      body += `
+          <var>${func.Name}</var> at
+          ${gotoExpansionLocLink(project, func.StartLocation)}
+          &minus;${gotoExpansionLocLink(project, func.EndLocation)}
+        </div>
+        <div class="col-1"></div>
+        <div class="col-1"></div>
+        <div class="col-1">${commandLink(linkExit)}</div>
+        <div class="col-1">${this._checkTrait(func.Traits.InOut, linkInOut)}</div>
+        <div class="col-1">${this._checkTrait(func.Traits.Readonly)}</div>
+        <div class="col-1">${this._checkTrait(func.Traits.UnsafeCFG, linkUnsafeCFG)}</div>
+      </div>`;
+      if (func.Traits.Loops == "No" || !func.Loops.length)
+        continue;
+      body +=`
+      <div class="collapse ${state.isSubtreeHidden(func) ? '' : 'show'}"
+           id="loopTree-${func.ID}">`;
+      body +=`
+      <script>
+        (function () {
+          const loopTree = $('#loopTree-${func.ID}');
+          const button = document.getElementById('collapse-loopTree-${func.ID}');
+          loopTree.on('hidden.bs.collapse', function () {
+            if ($(this).hasClass("show"))
+              return;
+            button.title = '${log.FunctionList.loopTree.replace('{0}', log.FunctionList.show)}';
+            button.innerHTML = '&plus;';
+            vscode.postMessage({ command: 'Subtree', hide: 'true', func: '${func.ID}'});
+          });
+          loopTree.on('shown.bs.collapse', function () {
+            if (!$(this).hasClass("show"))
+              return;
+            button.title = '${log.FunctionList.loopTree.replace('{0}', log.FunctionList.hide)}';
+            button.innerHTML = '&minus;';
+            vscode.postMessage({ command: 'Subtree', hide: 'false', func: '${func.ID}'});
+          });
+        }())
+      </script>`;
+      let currentLevel = 1;
+      for (let idx = 0; idx < func.Loops.length; ++idx) {
+        let loop = func.Loops[idx];
+        linkInOut.query['LoopID'] = loop.ID;
+        linkUnsafeCFG.query['LoopID'] = loop.ID;
+        linkExit.query['LoopID'] = loop.ID;
+        linkExit.body = loop.Exit === null ? '?' : loop.Exit.toString();
+        if (loop.Level > currentLevel) {
+          let parentLoop = func.Loops[idx - 1];
+          body += `
+          <div class="collapse ${state.isSubtreeHidden(parentLoop) ? '' : 'show'}"
+               id="loopTree-${func.ID}-${func.Loops[idx - 1].ID}">`;
+          body += `
+          <script>
+            (function () {
+              const loopTree = $('#loopTree-${func.ID}-${parentLoop.ID}');
+              const button = document.getElementById(
+                'collapse-loopTree-${func.ID}-${parentLoop.ID}');
+              loopTree.on('hidden.bs.collapse', function () {
+                if ($(this).hasClass("show"))
+                  return;
+                button.title = '${log.FunctionList.loopTree.replace('{0}', log.FunctionList.show)}';
+                button.innerHTML = '&plus;';
+                vscode.postMessage({
+                  command: 'Subtree',
+                  hide: 'true',
+                  func: '${func.ID}',
+                  loop: '${parentLoop.ID}'
+                });
+              });
+              loopTree.on('shown.bs.collapse', function () {
+                if (!$(this).hasClass("show"))
+                  return;
+                button.title = '${log.FunctionList.loopTree.replace('{0}', log.FunctionList.hide)}';
+                button.innerHTML = '&minus;';
+                vscode.postMessage({
+                  command: 'Subtree',
+                  hide: 'false',
+                  func: '${func.ID}',
+                  loop: '${parentLoop.ID}'
+                });
+              });
+            }())
+          </script>`;
+          ++currentLevel;
+        } else if (loop.Level < currentLevel) {
+          body += `</div>`;
+          --currentLevel;
         }
-        if (j != looplen - 1 && func.Loops[j + 1].Level > loop.Level) {
-          if (func.Loops[j + 1].Hide)
-            body += `${commandLink('tsar.expcol.looptree', project, 'Expand', '+',
-                JSON.stringify({FuncID: func.ID, LoopID: loop.ID, Hide: false}))}`;
-          else
-            body += `${commandLink('tsar.expcol.looptree', project, 'Collapse', '&minus;',
-                JSON.stringify({FuncID: func.ID, LoopID: loop.ID, Hide: true}))}`;
+        body += `
+        <div class="row py-2 text-center border-bottom">
+          <div class="col-4 text-left border-right">
+            ${'&emsp;'.repeat(loop.Level)}`;
+        if (idx < func.Loops.length - 1 && func.Loops[idx + 1].Level > loop.Level) {
+          let isSubtreeHidden = state.isSubtreeHidden(loop);
+          body += `
+            <a id="collapse-loopTree-${func.ID}-${loop.ID}"
+               class="source-link"
+               title="${log.FunctionList.loopTree.replace('{0}',
+                          isSubtreeHidden ? log.FunctionList.show
+                                          : log.FunctionList.hide)}"
+               data-toggle="collapse" href="#loopTree-${func.ID}-${loop.ID}" role="button"
+               aria-expanded="${isSubtreeHidden ? 'false': 'true'}"
+               aria-controls="loopTree-${func.ID}-${loop.ID}">
+              ${isSubtreeHidden ? '&plus;' : '&minus;'}
+            </a>`;
         }
-        body += `loop in ${func.Name} at ` +
-            getStrLocation(project, loop.StartLocation) + ` - ` +
-            getStrLocation(project, loop.EndLocation) + `</td>` +
-            checkTrait(loop.Traits.Canonical) + checkTrait(loop.Traits.Perfect);
-        body += `<td>${commandLink('tsar.callee.func', project,
-            linkExit.title, loop.Exit === null ? '?' : loop.Exit.toString(), linkExit.query)}</td>`;
-        body += checkTrait(loop.Traits.InOut, linkInOut) +
-            `<td></td>` +
-            checkTrait(loop.Traits.UnsafeCFG, linkUnsafeCFG) +
-            `</tr>`;
+        body += `
+            <var>${loop.Type.toLowerCase()}</var> loop in <var>${func.Name}</var> at
+              ${gotoExpansionLocLink(project, loop.StartLocation)}
+              &minus;${gotoExpansionLocLink(project, loop.EndLocation)}
+          </div>
+          <div class="col-1">${this._checkTrait(loop.Traits.Canonical)}</div>
+          <div class="col-1">${this._checkTrait(loop.Traits.Perfect)}</div>
+          <div class="col-1">${commandLink(linkExit)}</div>
+          <div class="col-1">${this._checkTrait(loop.Traits.InOut, linkInOut)}</div>
+          <div class="col-1"></div>
+          <div class="col-1">${this._checkTrait(loop.Traits.UnsafeCFG, linkUnsafeCFG)}</div>
+        </div>`;
       }
+      body += `</div>`;
     }
-    body += `</table>`;
-    return bootstrapHeader + body + bootstrapFooter;
+    body += `</body></html>`;
+    return body;
+  }
+
+  private _registerListeners(state: LoopTreeProviderState, funclst: msg.FunctionList) {
+    let panel = state.panel;
+    panel.webview.onDidReceiveMessage(message => {
+      switch(message.command) {
+        case 'Subtree':
+          let f = funclst.Functions.find(f => { return f.ID == message.func});
+          if (!('loop' in message))
+            state.setSubtreeHidden(message.hide === 'true', f);
+          else
+            state.setSubtreeHidden(message.hide === 'true',
+              f, f.Loops.find(l => { return l.ID == message.loop}));
+          break;
+      }
+    }, null, state.disposables);
+    panel.onDidChangeViewState(e => {
+      const panel = e.webviewPanel;
+      if (!panel.visible)
+        return;
+      for (let [key,value] of (state.data as Data).Info) {
+        if (isFunction(key))
+          panel.webview.postMessage({
+            command: 'Subtree',
+            func: key.ID,
+            hide: `${!value.ShowSubtree}`
+          });
+        else
+          panel.webview.postMessage({
+            command: 'Subtree',
+            func: value.Function.ID,
+            loop: key.ID,
+            hide: `${!value.ShowSubtree}`
+          });
+      }
+    }, null, state.disposables);
+  }
+
+  private _checkTrait(trait: string, commandJSON:any = undefined): string {
+    if (trait === "Yes") {
+      if (commandJSON !== undefined) {
+        commandJSON.body = `&#10003`;
+        return commandLink(commandJSON);
+      }
+      return `&#10003;`;
+    }
+    return `&minus;`;
   }
 }

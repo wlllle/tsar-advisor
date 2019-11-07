@@ -12,10 +12,9 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as log from './log';
-import {LoopTreeProvider} from './loopTree';
+import * as lt from './loopTree';
 import * as msg from './messages';
-import {ProjectEngine, Project} from './project';
-import {ProjectWebviewProviderState} from './webviewProvider';
+import {ProjectEngine } from './project';
 import {ProjectProvider} from './general';
 import {CalleeFuncProvider, CalleeFuncProviderState} from './calleeFunc';
 
@@ -47,10 +46,6 @@ function openLog(): boolean {
   return true;
 }
 
-  function isUri(pet: vscode.TextDocument | Project | vscode.Uri): pet is vscode.Uri {
-    return (pet as vscode.Uri) !== undefined;
-  }
-
 export function activate(context: vscode.ExtensionContext) {
   if (!openLog())
     return;
@@ -59,7 +54,7 @@ export function activate(context: vscode.ExtensionContext) {
   engine.register(
     [ProjectProvider.scheme, new ProjectProvider],
     [CalleeFuncProvider.scheme, new CalleeFuncProvider],
-    [LoopTreeProvider.scheme, new LoopTreeProvider]
+    [lt.LoopTreeProvider.scheme, new lt.LoopTreeProvider]
   );
   let start = vscode.commands.registerCommand(
     'tsar.start', (uri:vscode.Uri) => {
@@ -90,10 +85,12 @@ export function activate(context: vscode.ExtensionContext) {
             (doc) => {
               if (uri.query != '') {
                 let query = JSON.parse(uri.query);
-                let line = query.Line;
-                let col = query.Column;
-                doc.selection = new vscode.Selection(line - 1, col - 1, line - 1, col - 1);
-                doc.revealRange(new vscode.Range(line - 1, col - 1, line - 1, col - 1));
+                if ('Line' in query) {
+                  let line = query.Line;
+                  let col = query.Column;
+                  doc.selection = new vscode.Selection(line - 1, col - 1, line - 1, col - 1);
+                  doc.revealRange(new vscode.Range(line - 1, col - 1, line - 1, col - 1));
+                }
               }
             }
           );
@@ -103,53 +100,7 @@ export function activate(context: vscode.ExtensionContext) {
             `${log.Extension.displayName}: ${log.Error.openFile.replace('{0}', uri.fsPath)}`);
         });
     })
-  let showFuncList = vscode.commands.registerCommand('tsar.function.list',
-    (uri:vscode.Uri) => {
-      let project = engine.project(uri);
-      let state = project.providerState(LoopTreeProvider.scheme);
-      state.active = true;
-      if (!state.actual)
-        project.send(new msg.FunctionList);
-    });
-  let showLoopTree = vscode.commands.registerCommand('tsar.loop.tree',
-    (uri:vscode.Uri) => {
-      let project = engine.project(uri);
-      let state = project.providerState(LoopTreeProvider.scheme);
-      state.active = true;
-      let looptree = new msg.LoopTree;
-      let query = JSON.parse(uri.query);
-      looptree.FunctionID = query.ID;
-      project.send(looptree);
-    });
-  let ExpColLoopTree = vscode.commands.registerCommand('tsar.expcol.looptree',
-    (uri:vscode.Uri) => {
-      let project = engine.project(uri);
-      let state = project.providerState(
-        LoopTreeProvider.scheme) as ProjectWebviewProviderState<LoopTreeProvider>;
-      let response = state.data;
-      let query = JSON.parse(uri.query);
-      let i = 0;
-      while (i < response.Functions.length && query.FuncID != response.Functions[i].ID)
-        i++;;
-      if (!query.LoopID) {
-        for (let j = 0; j < response.Functions[i].Loops.length; j++)
-          if (response.Functions[i].Loops[j].Level == 1)
-          response.Functions[i].Loops[j].Hide = query.Hide;
-      } else {
-        let j = 0;
-        while (j < response.Functions[i].Loops.length && query.LoopID != response.Functions[i].Loops[j].ID)
-          j++;
-        let idx = j + 1;
-        while (idx < response.Functions[i].Loops.length &&
-            response.Functions[i].Loops[idx].Level > response.Functions[i].Loops[j].Level) {
-          if (response.Functions[i].Loops[idx].Level - 1 == response.Functions[i].Loops[j].Level) {
-            response.Functions[i].Loops[idx].Hide = query.Hide;
-          }
-          idx++;
-        }
-      }
-      project.update(response);
-    });
+  lt.registerCommands(engine, context.subscriptions);
   let showCalleeFunc = vscode.commands.registerCommand('tsar.callee.func',
     (uri:vscode.Uri) => {
       let project = engine.project(uri);
@@ -173,6 +124,5 @@ export function activate(context: vscode.ExtensionContext) {
       }
       project.send(funclist);
     });
-  context.subscriptions.push(start, stop, openProject, showFuncList,
-      showLoopTree, ExpColLoopTree, showCalleeFunc);
+  context.subscriptions.push(start, stop, openProject, showCalleeFunc);
 }

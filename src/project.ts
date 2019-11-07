@@ -426,14 +426,16 @@ export interface ProjectContentProviderState {
   /**
    * True if actual content is available, otherwise some data
    * should be loaded from server.
+   *
+   * @param request Data which would be requested if necessary.
    */
-  readonly actual: boolean;
+  actual(request: any): boolean;
 
   /**
    * Access 'active' property of the state.
    *
    * Return `true` if state is active.
-   * 
+   *
    * Usage example. If set to `true` fire event `onDidChangeActiveState` event
    * and notify listeners that the state wait for content to show. Project is
    * listening for this event and try to show content on activation.
@@ -444,6 +446,11 @@ export interface ProjectContentProviderState {
    * Fired when state 'active' property is changed.
    */
   readonly onDidChangeActiveState : vscode.Event<boolean>;
+
+  /**
+   * List of disposable objects which should be disposed with this state.
+   */
+  readonly disposables: vscode.Disposable [];
 
   /**
    * Dispose of the state.

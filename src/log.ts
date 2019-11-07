@@ -25,6 +25,9 @@ export class Extension {
   static url = 'http://dvm-system.org';
   static langauges = {'c' : 'C', 'cpp' : 'C++'};
   static style = path.resolve(__dirname, 'style.css');
+  static logo = path.resolve(__dirname, 'images', 'logo.png');
+  static bootstrap = path.resolve(__dirname, '..', '..', 'node_modules', 'bootstrap', 'dist');
+  static jquery = path.resolve(__dirname, '..', '..', 'node_modules', 'jquery', 'dist');
   static log = path.resolve(__dirname, '..', '..', 'log', 'tsar.log');
 }
 
@@ -90,10 +93,17 @@ export class Command {
 
 export class FunctionList {
   static title = 'List of functions in {0}';
+  static build = 'Build';
+  static hide = 'Hide';
+  static show = 'Show';
+  static loopTree = '{0} loop tree';
 }
 
-export class CalleeFunc {
+export class CallGraph {
   static title = 'List of callee functions in {0}';
+  static io = 'View statements which perform in/out operations.';
+  static unsafeCFG = 'View statements which lead to unsafe control flow.';
+  static exit = 'View all possible exits from this region.';
 }
 
 export class Summary {

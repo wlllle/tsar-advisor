@@ -24,7 +24,8 @@ export class ProjectWebviewProviderState<ProviderT extends ProjectWebviewProvide
   private _panel: vscode.WebviewPanel;
   private _hasPanel = false;
   private _isActive = false;
-  private readonly _disposables: vscode.Disposable[] = [];
+
+  readonly disposables: vscode.Disposable[] = [];
 
   private _onDidDisposeContent = new vscode.EventEmitter<void>();
   readonly onDidDisposeContent = this._onDidDisposeContent.event;
@@ -53,7 +54,10 @@ export class ProjectWebviewProviderState<ProviderT extends ProjectWebviewProvide
     this._provider = provider;
   }
 
-  get actual(): boolean { return false; }
+  /**
+   * Content is not actual by default. Override in derived classes if necessary.
+   */
+  actual(_request: any): boolean { return false; }
 
   get active(): boolean { return this._isActive; }
   set active(is: boolean) {
@@ -80,12 +84,13 @@ export class ProjectWebviewProviderState<ProviderT extends ProjectWebviewProvide
         columnToShowIn,
         {
           enableCommandUris: true,
+          enableScripts: true,
         }
       );
       this._panel.onDidDispose(() => {
         this._hasPanel = false;
         this._onDidDisposeContent.fire();
-      }, null, this._disposables);
+      }, null, this.disposables);
       this._hasPanel = true;
     }
     return this._panel;
@@ -94,8 +99,8 @@ export class ProjectWebviewProviderState<ProviderT extends ProjectWebviewProvide
   dispose(): any {
     if (this._hasPanel)
       this._panel.dispose();
-    this._disposables.forEach(d => d.dispose());
-    this._disposables.length = 0;
+    this.disposables.forEach(d => d.dispose());
+    this.disposables.length = 0;
   }
 }
 

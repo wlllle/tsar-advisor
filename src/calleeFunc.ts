@@ -11,7 +11,7 @@
 
 import * as vscode from 'vscode';
 import * as path from 'path';
-import {UpdateUriFunc, commandLink, getStrLocation} from './functions';
+import {UpdateUriFunc, commandLink, gotoExpansionLocLink} from './functions';
 import * as log from './log';
 import * as msg from './messages';
 import * as lt from './loopTree';
@@ -60,7 +60,7 @@ export class CalleeFuncProvider extends ProjectWebviewProvider {
     return new CalleeFuncProviderState(this);
   }
 
-  protected _title(): string { return log.CalleeFunc.title; }
+  protected _title(): string { return log.CallGraph.title; }
 
   protected _needToHandle(response: any): boolean {
     return response instanceof msg.CalleeFuncList;
@@ -96,7 +96,7 @@ export class CalleeFuncProvider extends ProjectWebviewProvider {
         body += `<li>${calleefunclist.Functions[i].Name}</li><ul>`;
       } else {
         let looptreestate = <ProjectWebviewProviderState<lt.LoopTreeProvider>>project.providerState(lt.LoopTreeProvider.scheme);
-        let funclist = looptreestate.data;
+        let funclist = looptreestate.data.FunctionList;
         let id = 0;
         for (let j = 0; j < funclist.Functions.length; j++)
           if (funclist.Functions[j].Name == calleefunclist.Functions[i].Name)
@@ -104,14 +104,14 @@ export class CalleeFuncProvider extends ProjectWebviewProvider {
         if (id) {
           let query = {ID: calleefunclist.Functions[i].ID, FuncID: id, LoopID: 0, Attr: calleefunclist.Attr};
           body += `<li>` +
-              `${commandLink('tsar.callee.func', project, 'CalleeFunc', '+', JSON.stringify(query))}` +
+              `${commandLink({ command: 'tsar.callee.func', project, title: 'CalleeFunc', body: '+', query: JSON.stringify(query) })}` +
               `${calleefunclist.Functions[i].Name}`;
         } else {
           body += `<li>${calleefunclist.Functions[i].Name}`;
         }
-        body += `\t` + getStrLocation(project, calleefunclist.Functions[i].Locations[0]);
+        body += `\t` + gotoExpansionLocLink(project, calleefunclist.Functions[i].Locations[0]);
         for (let j = 1; j < calleefunclist.Functions[i].Locations.length; j++)
-          body += `, ` + getStrLocation(project, calleefunclist.Functions[i].Locations[j]);
+          body += `, ` + gotoExpansionLocLink(project, calleefunclist.Functions[i].Locations[j]);
         body += `</li>`;
         if (sublevel > 0)
           for (let i = 0; i < sublevel; i++)

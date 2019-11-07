@@ -18,6 +18,8 @@ import {Project} from './project';
 import * as log from './log';
 import * as msg from './messages';
 
+export type DisposableLikeList = { dispose(): any }[];
+
 /**
  * Encodes location for content provider.
  */
@@ -91,13 +93,20 @@ export function establishVSEnvironment(onerror: (err: any) => any): any {
 }
 
 /**
- * Returns html representation of a link which invokes a specified command.
- *
- * TODO (kaniandr@gmail.com): add arguments to specify parameters of a command.
+ * Return html representation of a link which invokes a specified command.
+ * @param query String or JSON representation of command arguments.
  */
-export function commandLink(
-    command: string, project: Project, title: string, body: string, query: string): string {
-  let uri = project.uri.with({query: query});
+export function commandLink({ command, project, title, body, query }:
+    {
+      command: string;
+      project: Project;
+      title: string;
+      body: string;
+      query: any;
+    }): string {
+  let uri = project.uri.with({
+    query: typeof query === 'string' ? query : JSON.stringify(query)
+  });
   return `
     <a class="source-link"
        href="${encodeURI(
@@ -107,18 +116,53 @@ export function commandLink(
 }
 
 /**
- * Returns html representation of a link to a project.
+ * Return html representation of a link to a project.
  *
  * This link invokes a command 'tsar.open-project'.
  */
 export function projectLink(project: Project): string {
-  return commandLink('tsar.open-project', project,
-      project.uri.fsPath, path.basename(project.prjname), '');
+  return commandLink({
+    command: 'tsar.open-project', project,
+    title: project.uri.fsPath,
+    body: path.basename(project.prjname),
+    query: ''
+  });
 }
 
-export function moveToCode(project: Project, body: string, query: string) {
-  return commandLink('tsar.open-project', project,
-      'Move to code', body, query);
+/**
+ * Return html representation of a link to a location in a source code.
+ */
+export function gotoSpellingLocLink({ project, body, line, column }:
+    {
+      project: Project;
+      body: string;
+      line: number;
+      column: number;
+    }):string {
+  return commandLink({
+    command: 'tsar.open-project', project,
+    title: 'Go to Source Code', body,
+    query: JSON.stringify({Line: line, Column: column})
+  });
+}
+
+/**
+ * Return html representation of a link to expansion locations.
+ * 
+ * @returns Link `line:column` if location is not in macro or
+ *          `line:column(macro-line:macro-column)`.
+ */
+export function gotoExpansionLocLink(project: Project, Loc: msg.Location, ): string {
+  if ((Loc.Line == Loc.MacroLine) &&
+      (Loc.Column == Loc.MacroColumn)) {
+    let loc = `${Loc.Line}:${Loc.Column}`;
+    return `${gotoSpellingLocLink({ project, body: loc, line: Loc.Line, column: Loc.Column })}`;
+  }
+  let macroloc = `${Loc.MacroLine}:${Loc.MacroColumn}`;
+  let loc = `${Loc.Line}:${Loc.Column}`;
+  return `
+    ${gotoSpellingLocLink({ project, body: loc,line: Loc.Line, column: Loc.Column })}
+    (${gotoSpellingLocLink({ project, body: macroloc, line: Loc.MacroLine, column: Loc.MacroColumn })})`;
 }
 
 /**
@@ -134,40 +178,65 @@ export function numberHtml(n: number): string {
 export type UpdateUriFunc = (uri: vscode.Uri) => vscode.Uri;
 
 /**
- * Returns html representation of a link to a style-file.
+ * Return html representation of a link to a style-file.
  * @param updateUri A function to update uri before it is inserted into html.
  */
 export function styleLink(
     updateUri: UpdateUriFunc = (uri => { return uri })): string {
-  return `<link href= ${updateUri(vscode.Uri.file(log.Extension.style))} rel="stylesheet" type="text/css"/>`;
+  return `<link href = ${updateUri(vscode.Uri.file(log.Extension.style))} rel="stylesheet" type="text/css"/>`;
 }
 
 /**
- * Provides html in case when analysis results is unavailable.
+ * Return html link to Bootstrap CSS file.
+ * @param updateUri A function to update uri before it is inserted into html.
  */
-export function unavailableHtml(uri: vscode.Uri): string {
-  return `
-    <!DOCTYPE html>
-    <html>
-      <head>
-        ${styleLink()}
-      </head>
-      <body>
-        <div class="summary-post">
-          <h1> Sorry, ${log.Error.unavailable} </h1>
-          <p>
-            <a class="source-link"
-                href="${encodeURI('command:tsar.start?' + JSON.stringify(uri))}">
-              Try to restart...
-            </a>
-          </p>
-        </div>
-      </body>
-    </html>`;
+export function bootstrapCSSLink(
+    updateUri: UpdateUriFunc = (uri => { return uri })): string {
+  return `<link href = ${updateUri(vscode.Uri.file(
+      path.resolve(log.Extension.bootstrap, 'css', 'bootstrap.min.css')))}
+    rel="stylesheet" type="text/css">`;
 }
 
 /**
- * Provides html for welcome information.
+ * Return html to use Bootstrap JS scripts.
+ * @param updateUri A function to update uri before it is inserted into html.
+ */
+export function bootstrapJSLink(
+    updateUri: UpdateUriFunc = (uri => { return uri })): string {
+  return `<script src = ${updateUri(vscode.Uri.file(
+      path.resolve(log.Extension.bootstrap, 'js', 'bootstrap.bundle.min.js')))}></script>`
+}
+
+/**
+ * Return html to use JQuery JS scripts.
+ * @param updateUri A function to update uri before it is inserted into html.
+ */
+export function jqueryJSLink(
+    updateUri: UpdateUriFunc = (uri => { return uri })): string {
+  return `<script src = ${updateUri(vscode.Uri.file(
+      path.resolve(log.Extension.jquery, 'jquery.min.js')))}></script>`
+}
+
+/**
+ * Return default html head.
+ * @param updateUri A function to update uri before it is inserted into html.
+ */
+export function headHtml(
+    updateUri: UpdateUriFunc = (uri => { return uri })): string {
+  return `
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+      ${bootstrapCSSLink(updateUri)}
+      ${styleLink(updateUri)}
+      ${jqueryJSLink(updateUri)}
+      ${bootstrapJSLink(updateUri)}
+    </head>
+  `;
+}
+
+/**
+ * Provide html for loading...
  * @param updateUri A function to update uri before it is inserted into html.
  */
 export function waitHtml(title: string, project: Project,
@@ -175,40 +244,16 @@ export function waitHtml(title: string, project: Project,
   return `
     <!DOCTYPE html>
     <html>
-      <head>
-        ${styleLink(updateUri)}
-      </head>
-      <body>
-        <div class="summary-post">
-          <h1> ${title.replace('{0}', projectLink(project))} </h1>
-          <p> Please wait while analysis will be finished... </p>
+      ${headHtml(updateUri)}
+      <body class="d-flex flex-column bg-light text-secondary">
+        <div class="container-fluid pt-4">
+          <h3> ${title.replace('{0}', projectLink(project))} </h3>
+          <div class="text-center">
+            <div class="spinner-border spiner-border-sm" role="status">
+              <span class="sr-only">Loading...</span>
+            </div>
+          </div>
         </div>
       </body>
     </html>`;
-}
-
-export function checkTrait(trait: string, link = undefined): string {
-  if (trait == "Yes") {
-    if (link != undefined)
-      return `<td>` + commandLink(link.command, link.project, link.title, `&#10003;`, link.query) + `</td>`;
-    return `<td>&#10003;</td>`;
-  } else {
-    return `<td>&minus;</td>`;
-  }
-}
-
-export function getStrLocation(project: Project, Loc: msg.Location, ): string {
-  if ((Loc.Line == Loc.MacroLine) &&
-      (Loc.Column == Loc.MacroColumn)) {
-    let loc = `${Loc.Line}:${Loc.Column}`;
-    let locquery = {Line: Loc.Line, Column: Loc.Column};
-    return `${moveToCode(project, loc, JSON.stringify(locquery))}`;
-  } else {
-    let macroloc = `${Loc.MacroLine}:${Loc.MacroColumn}`;
-    let loc = `${Loc.Line}:${Loc.Column}`;
-    let macrolocquery = {Line: Loc.MacroLine, Column: Loc.MacroColumn};
-    let locquery = {Line: Loc.Line, Column: Loc.Column};
-    return `${moveToCode(project, loc, JSON.stringify(locquery))}
-        (${moveToCode(project, macroloc, JSON.stringify(macrolocquery))})`;
-  }
 }
