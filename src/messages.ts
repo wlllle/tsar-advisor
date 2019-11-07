@@ -116,6 +116,7 @@ export class Diagnostic {
 */
 export class CommandLine {
   Args: Arguments;
+  Query?: string;
   Input?: string;
   Output?: string;
   Error?: string;

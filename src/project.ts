@@ -126,7 +126,7 @@ export class ProjectEngine {
    * TODO (kaniandr@gmail.com): currently each project consists of a single
    * file, update to support projects configured with a help of *.json file.
    */
-  start(doc: vscode.TextDocument): Thenable<msg.Diagnostic|undefined> {
+  start(doc: vscode.TextDocument): Thenable<Project> {
     return new Promise((resolve, reject) => {
       let project = this.project(doc.uri);
       if (project !== undefined) {
@@ -141,7 +141,7 @@ export class ProjectEngine {
       let prjDir = this._makeProjectDir(path.dirname(uri.fsPath));
       if (typeof prjDir != 'string')
         return reject(prjDir);
-      this._startServer(uri, <string>prjDir, this._environment);
+      this._startServer(uri, <string>prjDir, this._environment, resolve, reject);
       return undefined;
     })
   }
@@ -154,6 +154,19 @@ export class ProjectEngine {
       this._stop(target)
     else
       this._stop(target.uri);
+  }
+
+  /**
+   * Send response to run analysis or perform transformation.
+   */
+  runTool(project: Project, query?: string) {
+    let cl = new msg.CommandLine(log.Extension.displayName);
+    cl.Args[1] = project.uri.fsPath;
+    if (query)
+      cl.Query = query;
+    cl.Output = path.join(project.dirname, log.Project.output);
+    cl.Error = path.join(project.dirname, log.Project.error);
+    project.send(cl);
   }
 
   /**
@@ -173,40 +186,36 @@ export class ProjectEngine {
   /**
   *  Check that a specified document can be analyzed.
   */
-  private _checkDocument(doc: vscode.TextDocument): msg.Diagnostic|undefined {
+  private _checkDocument(doc: vscode.TextDocument): Error[]|undefined {
     let uri = doc.uri;
-    let diag = new msg.Diagnostic;
     /// TODO (kaniandr@gmail.com): suggest save it and open appropriate dialog.
+    let errors: Error[] = [];
     if (doc.isUntitled)
-      diag.Error.push(log.Error.untitled.replace('{0}', uri.fsPath));
+      errors.push(
+        new Error(log.Error.untitled.replace('{0}', uri.fsPath)));
     if (!log.Extension.langauges[doc.languageId])
-      diag.Error.push(log.Error.language.replace('{0}', uri.fsPath));
-    return (diag.Error.length > 0) ? diag : undefined;
+      errors.push(
+        new Error(log.Error.language.replace('{0}', uri.fsPath)));
+    return (errors.length > 0) ? errors : undefined;
   }
 
   /**
    *  Create directory for a project-specific files, returns full path of
    *  created directory on success, otherwise returns appropriate diagnostics.
    */
-  private _makeProjectDir(pathToPrj: string): msg.Diagnostic|string {
+  private _makeProjectDir(pathToPrj: string): Error|string {
     let prjDir = path.join(pathToPrj, log.Project.directory);
     try {
       if (fs.existsSync(prjDir)) {
         let stat = fs.statSync(prjDir);
-        if (!stat.isDirectory()) {
-          let diag = new msg.Diagnostic;
-          diag.Error.push(
-            log.Error.notDirectory.replace('{0}', prjDir));
-          return diag;
-        }
+        if (!stat.isDirectory())
+          return new Error(log.Error.notDirectory.replace('{0}', prjDir));
       } else {
         fs.mkdirSync(prjDir);
       }
     }
     catch (err) {
-      let diag = new msg.Diagnostic;
-      diag.Error.push(err.message);
-      return diag;
+      return new Error(err.message);
     }
     return prjDir;
   }
@@ -221,7 +230,7 @@ export class ProjectEngine {
    * @param env This parameter is used to specified environment of server
    *  execution.
    */
-  private _startServer(uri: vscode.Uri, prjDir: string, env: any) {
+  private _startServer(uri: vscode.Uri, prjDir: string, env: any, resolve: any, reject: any) {
     const pipe = this._pipe(uri);
     // {execArgv: []} disables --debug options otherwise the server.js tries to
     // use the same port as a main process for debugging and will not be run
@@ -260,11 +269,7 @@ export class ProjectEngine {
           log.Log.logs[0].write(log.Message.connection);
           log.Log.logs[0].write(
             log.Message.active.replace('{0}', project.uri.toString()));
-          let state = project.providerState(ProjectProvider.scheme);
-          state.onDidDisposeContent(() => {this.stop(project)},
-            null, this._context.subscriptions);
-          state.active = true;
-          this._runAnalysis(project);
+          resolve(project);
         } else {
           let match = data.match(/^\s*(\w*)\s*{\s*(.*)\s*}\s*$/);
           if (!match)
@@ -278,11 +283,11 @@ export class ProjectEngine {
         }
       }
       catch(err) {
-        this._internalError(err);
-      if (server)
-        server.kill();
-      if (client)
-        client.destroy();
+        reject(err);
+        if (server)
+          server.kill();
+        if (client)
+          client.destroy();
       }
     });
   }
@@ -298,18 +303,6 @@ export class ProjectEngine {
     } else {
       return path.join('\\\\?\\pipe', uri.path, log.Project.pipe);
     }
-  }
-
-  /**
-   * Send response to run analysis and obtain general statistic information.
-   */
-  private _runAnalysis(project: Project) {
-    let cl = new msg.CommandLine(log.Extension.displayName);
-    cl.Args[1] = project.uri.fsPath;
-    cl.Output = path.join(project.dirname, log.Project.output);
-    cl.Error = path.join(project.dirname, log.Project.error);
-    project.send(cl);
-    project.send(new msg.Statistic);
   }
 
   /**

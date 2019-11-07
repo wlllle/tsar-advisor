@@ -46,6 +46,24 @@ function openLog(): boolean {
   return true;
 }
 
+function onReject(reason: any, projectUri: vscode.Uri) {
+  log.Log.logs[0].write(log.Error.active);
+  if ((reason as Error[]).length !== undefined) {
+    for (let err of reason as Error[]) {
+      let error = `${log.Extension.displayName}: ${err.message}`;
+      log.Log.logs[0].write(error);
+      vscode.window.showErrorMessage(error);
+    }
+  } else if (reason instanceof Error) {
+    log.Log.logs[0].write(reason.message);
+    vscode.window.showErrorMessage(reason.message);
+  } else {
+    let error = `${log.Extension.displayName}: ${log.Error.openFile.replace('{0}', projectUri.fsPath)}`;
+    log.Log.logs[0].write(error);
+    vscode.window.showErrorMessage(error);
+  }
+}
+
 export function activate(context: vscode.ExtensionContext) {
   if (!openLog())
     return;
@@ -60,20 +78,17 @@ export function activate(context: vscode.ExtensionContext) {
     'tsar.start', (uri:vscode.Uri) => {
       vscode.workspace.openTextDocument(uri)
         .then((success) => {return engine.start(success)})
-        .then(null, (reason) => {
-          log.Log.logs[0].write(log.Error.active);
-          if (reason instanceof msg.Diagnostic) {
-            for (let err in reason.Error) {
-              let error = `${log.Extension.displayName}: ${reason.Error[err]}`;
-              vscode.window.showErrorMessage(error);
-              log.Log.logs[0].write(error);
-            }
-          } else {
-            let error = `${log.Extension.displayName}: ${log.Error.openFile.replace('{0}', uri.fsPath)}`;
-            log.Log.logs[0].write(error);
-            vscode.window.showErrorMessage(error);
-          }
-        });
+        .then(
+          project => {
+            let state = project.providerState(ProjectProvider.scheme);
+            state.onDidDisposeContent(() => {engine.stop(project)},
+              null, context.subscriptions);
+            engine.runTool(project);
+            state.active = true;
+            project.send(new msg.Statistic);
+          },
+          reason => { onReject(reason, uri) })
+    });
     });
   let stop = vscode.commands.registerCommand(
     'tsar.stop', (uri:vscode.Uri) => engine.stop(uri));
