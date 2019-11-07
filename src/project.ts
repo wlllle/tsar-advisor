@@ -121,7 +121,7 @@ export class ProjectEngine {
   }
 
   /**
-   * Start analysis of a specified project.
+   * Start processing of a specified project.
    *
    * TODO (kaniandr@gmail.com): currently each project consists of a single
    * file, update to support projects configured with a help of *.json file.
@@ -130,6 +130,15 @@ export class ProjectEngine {
     return new Promise((resolve, reject) => {
       let project = this.project(doc.uri);
       if (project !== undefined) {
+        vscode.window.showWarningMessage(
+          `${log.Extension.displayName} | ${project.prjname}: ${log.Error.alreadyActive}`,
+           'Close session', 'Go to Project')
+        .then(item => {
+          if (item === 'Close session')
+            vscode.commands.executeCommand('tsar.stop', project.uri);
+          else if (item == 'Go to Project')
+            vscode.commands.executeCommand('tsar.open-project', project.uri);
+        });
         let state = project.providerState(ProjectProvider.scheme);
         state.provider.update(project);
         return undefined;
@@ -147,7 +156,7 @@ export class ProjectEngine {
   }
 
   /**
-   * Stop analysis of a specified project.
+   * Stop processing of a specified project.
    */
   stop(target: vscode.TextDocument | Project | vscode.Uri) {
     if (ProjectEngine._isUri(target))
@@ -320,10 +329,15 @@ export class ProjectEngine {
         if (!obj)
           throw new Error(log.Error.unknownResponse.replace('{0}', data));
         project.update(obj);
-        if (obj instanceof msg.Diagnostic && obj.Status != msg.Status.Success) {
+        if (obj instanceof msg.Diagnostic) {
           // Do not invoke client.end() here because it prevents showing errors
           // in output channel project.output.
-          this._diagnostic(project, obj);
+          switch(obj.Status) {
+            case msg.Status.Error:
+            case msg.Status.Invalid:
+              this._diagnostic(project, obj);
+              break;
+          }
           return;
         }
       }

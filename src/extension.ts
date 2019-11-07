@@ -14,9 +14,11 @@ import * as path from 'path';
 import * as log from './log';
 import * as lt from './loopTree';
 import * as msg from './messages';
+import {onReject} from './functions';
 import {ProjectEngine } from './project';
 import {ProjectProvider} from './general';
 import {CalleeFuncProvider, CalleeFuncProviderState} from './calleeFunc';
+import * as t from './transformProvider';
 
 /**
  * Open log file (log.Extension.log), returns true on success.
@@ -46,24 +48,6 @@ function openLog(): boolean {
   return true;
 }
 
-function onReject(reason: any, projectUri: vscode.Uri) {
-  log.Log.logs[0].write(log.Error.active);
-  if ((reason as Error[]).length !== undefined) {
-    for (let err of reason as Error[]) {
-      let error = `${log.Extension.displayName}: ${err.message}`;
-      log.Log.logs[0].write(error);
-      vscode.window.showErrorMessage(error);
-    }
-  } else if (reason instanceof Error) {
-    log.Log.logs[0].write(reason.message);
-    vscode.window.showErrorMessage(reason.message);
-  } else {
-    let error = `${log.Extension.displayName}: ${log.Error.openFile.replace('{0}', projectUri.fsPath)}`;
-    log.Log.logs[0].write(error);
-    vscode.window.showErrorMessage(error);
-  }
-}
-
 export function activate(context: vscode.ExtensionContext) {
   if (!openLog())
     return;
@@ -72,7 +56,8 @@ export function activate(context: vscode.ExtensionContext) {
   engine.register(
     [ProjectProvider.scheme, new ProjectProvider],
     [CalleeFuncProvider.scheme, new CalleeFuncProvider],
-    [lt.LoopTreeProvider.scheme, new lt.LoopTreeProvider]
+    [lt.LoopTreeProvider.scheme, new lt.LoopTreeProvider],
+    [t.TransformationProvider.scheme, new t.TransformationProvider]
   );
   let start = vscode.commands.registerCommand(
     'tsar.start', (uri:vscode.Uri) => {
@@ -89,7 +74,43 @@ export function activate(context: vscode.ExtensionContext) {
           },
           reason => { onReject(reason, uri) })
     });
-    });
+  t.registerCommands([
+    {
+      command: 'tsar.transform.propagate',
+      title: 'Expression Propagation',
+      run: '-clang-propagate'
+    },
+    {
+      command: 'tsar.transform.inline',
+      title: 'TSAR Function Inlining',
+      run: '-clang-inline'
+    },
+    {
+      command: 'tsar.transform.rename',
+      title: 'TSAR Local Renaming',
+      run: '-clang-rename'
+    },
+    {
+      command: 'tsar.transform.dedecls',
+      title: 'TSAR Dead Declarations Elimination',
+      run: '-clang-de-decls'
+    },
+    {
+      command: 'tsar.parallel.openmp',
+      title: 'Parallelization with OpenMP',
+      run: '-clang-openmp-parallel'
+    },
+    {
+      command: 'tsar.parallel.dvmh',
+      title: 'TSAR Parallelization with DVMH',
+      run: '-clang-experimental-apc-dvmh'
+    },
+    {
+      command: 'tsar.analysis.check',
+      title: 'TSAR Check User-defined Properties',
+      run: '-check'
+    }
+  ],engine, context.subscriptions);
   let stop = vscode.commands.registerCommand(
     'tsar.stop', (uri:vscode.Uri) => engine.stop(uri));
   let openProject = vscode.commands.registerCommand('tsar.open-project',

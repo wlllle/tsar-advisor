@@ -1,40 +1,144 @@
 {
   "name": "tsar-advisor",
   "displayName": "TSAR Advisor",
-  "description": "This tool proposes some useful information about a program to simplify its parallelization.",
+  "description": "This tool performs user-guided program transformations and proposes some useful information about a program to simplify its parallelization.",
   "version": "0.0.3",
   "publisher": "DVM",
   "homepage": "http://dvm-system.org",
   "keywords": [
     "parallel programming",
     "program analysis",
+    "program transformation",
     "automated parallelization"
   ],
   "license": "SEE LICENSE IN LICENSE.txt",
   "engines": {
-    "vscode": "^1.8.1"
+    "vscode": "^1.38.0"
   },
   "categories": [
     "Other"
   ],
   "activationEvents": [
     "onCommand:tsar.start",
-    "onCommand:tsar.stop"
+    "onCommand:tsar.analysis.check",
+    "onCommand:tsar.transform.propagate",
+    "onCommand:tsar.transform.inline",
+    "onCommand:tsar.transform.dedecls",
+    "onCommand:tsar.transform.rename",
+    "onCommand:tsar.parallel.openmp",
+    "onCommand:tsar.parallel.dvmh"
   ],
   "main": "./out/src/extension",
   "contributes": {
     "commands": [
       {
         "command": "tsar.start",
-        "title": "TSAR: Analyze file"
+        "title": "TSAR Analyze file"
       },
       {
         "command": "tsar.stop",
-        "title": "TSAR: Close session"
+        "title": "TSAR Close session"
+      },
+      {
+        "command": "tsar.analysis.check",
+        "title": "TSAR Check User-defined Properties"
+      },
+      {
+        "command": "tsar.transform.propagate",
+        "title": "TSAR Expression Propagation"
+      },
+      {
+        "command": "tsar.transform.inline",
+        "title": "TSAR Function Inlining"
+      },
+      {
+        "command": "tsar.transform.rename",
+        "title": "TSAR Local Renaming"
+      },
+      {
+        "command": "tsar.transform.dedecls",
+        "title": "TSAR Dead Declarations Elimination"
+      },
+      {
+        "command": "tsar.parallel.openmp",
+        "title": "TSAR Parallelization with OpenMP"
+      },
+      {
+        "command": "tsar.parallel.dvmh",
+        "title": "TSAR Parallelization with DVMH"
       }
     ],
     "menus": {
       "editor/context": [
+        {
+          "command": "tsar.parallel.dvmh",
+          "when": "editorLangId == 'cpp'",
+          "group": "1_tsar"
+        },
+        {
+          "command": "tsar.parallel.dvmh",
+          "when": "editorLangId == 'c'",
+          "group": "1_tsar"
+        },
+        {
+          "command": "tsar.parallel.openmp",
+          "when": "editorLangId == 'cpp'",
+          "group": "1_tsar"
+        },
+        {
+          "command": "tsar.parallel.openmp",
+          "when": "editorLangId == 'c'",
+          "group": "1_tsar"
+        },
+        {
+          "command": "tsar.transform.rename",
+          "when": "editorLangId == 'cpp'",
+          "group": "1_tsar"
+        },
+        {
+          "command": "tsar.transform.rename",
+          "when": "editorLangId == 'c'",
+          "group": "1_tsar"
+        },
+        {
+          "command": "tsar.transform.dedecls",
+          "when": "editorLangId == 'cpp'",
+          "group": "1_tsar"
+        },
+        {
+          "command": "tsar.transform.dedecls",
+          "when": "editorLangId == 'c'",
+          "group": "1_tsar"
+        },
+        {
+          "command": "tsar.transform.inline",
+          "when": "editorLangId == 'cpp'",
+          "group": "1_tsar"
+        },
+        {
+          "command": "tsar.transform.inline",
+          "when": "editorLangId == 'c'",
+          "group": "1_tsar"
+        },
+        {
+          "command": "tsar.transform.propagate",
+          "when": "editorLangId == 'cpp'",
+          "group": "1_tsar"
+        },
+        {
+          "command": "tsar.transform.propagate",
+          "when": "editorLangId == 'c'",
+          "group": "1_tsar"
+        }, {
+          "command": "tsar.analysis.check",
+          "when": "editorLangId == 'cpp'",
+          "group": "1_tsar"
+        },
+        {
+          "command": "tsar.analysis.check",
+          "when": "editorLangId == 'c'",
+          "group": "1_tsar"
+        },
         {
           "command": "tsar.start",
           "when": "editorLangId == 'cpp'",
@@ -47,6 +151,76 @@
         }
       ],
       "explorer/context": [
+        {
+          "command": "tsar.parallel.dvmh",
+          "when": "resourceLangId == 'cpp'",
+          "group": "1_tsar"
+        },
+        {
+          "command": "tsar.parallel.dvmh",
+          "when": "resourceLangId == 'c'",
+          "group": "1_tsar"
+        },
+        {
+          "command": "tsar.parallel.openmp",
+          "when": "resourceLangId == 'cpp'",
+          "group": "1_tsar"
+        },
+        {
+          "command": "tsar.parallel.openmp",
+          "when": "resourceLangId == 'c'",
+          "group": "1_tsar"
+        },
+        {
+          "command": "tsar.transform.rename",
+          "when": "resourceLangId' == 'cpp'",
+          "group": "1_tsar"
+        },
+        {
+          "command": "tsar.transform.rename",
+          "when": "resourceLangId == 'c'",
+          "group": "1_tsar"
+        },
+        {
+          "command": "tsar.transform.dedecls",
+          "when": "resourceLangId' == 'cpp'",
+          "group": "1_tsar"
+        },
+        {
+          "command": "tsar.transform.dedecls",
+          "when": "resourceLangId == 'c'",
+          "group": "1_tsar"
+        },
+        {
+          "command": "tsar.transform.inline",
+          "when": "resourceLangId' == 'cpp'",
+          "group": "1_tsar"
+        },
+        {
+          "command": "tsar.transform.inline",
+          "when": "resourceLangId == 'c'",
+          "group": "1_tsar"
+        },
+        {
+          "command": "tsar.transform.propagate",
+          "when": "resourceLangId' == 'cpp'",
+          "group": "1_tsar"
+        },
+        {
+          "command": "tsar.transform.propagate",
+          "when": "resourceLangId == 'c'",
+          "group": "1_tsar"
+        },
+        {
+          "command": "tsar.analysis.check",
+          "when": "resourceLangId == 'cpp'",
+          "group": "1_tsar"
+        },
+        {
+          "command": "tsar.analysis.check",
+          "when": "resourceLangId == 'c'",
+          "group": "1_tsar"
+        },
         {
           "command": "tsar.start",
           "when": "resourceLangId == 'cpp'",

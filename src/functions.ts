@@ -21,6 +21,30 @@ import * as msg from './messages';
 export type DisposableLikeList = { dispose(): any }[];
 
 /**
+ * Implement simple processing of errors: show message and write to log.
+ *
+ * @param reason Description of error, special processing of `Error []` and
+ *               `Error` is implemented.
+ */
+export function onReject(reason: any, projectUri: vscode.Uri) {
+  log.Log.logs[0].write(log.Error.active);
+  if ((reason as Error[]).length !== undefined) {
+    for (let err of reason as Error[]) {
+      let error = `${log.Extension.displayName}: ${err.message}`;
+      log.Log.logs[0].write(error);
+      vscode.window.showErrorMessage(error);
+    }
+  } else if (reason instanceof Error) {
+    log.Log.logs[0].write(reason.message);
+    vscode.window.showErrorMessage(reason.message);
+  } else {
+    let error = `${log.Extension.displayName}: ${log.Error.openFile.replace('{0}', projectUri.fsPath)}`;
+    log.Log.logs[0].write(error);
+    vscode.window.showErrorMessage(error);
+  }
+}
+
+/**
  * Encodes location for content provider.
  */
 export function encodeLocation(scheme: string, prjUri: vscode.Uri,

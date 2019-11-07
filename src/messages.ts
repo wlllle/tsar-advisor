@@ -72,7 +72,7 @@ export interface Arguments {
   push(item: string): number;
 }
 
-export enum Status {Success, Error, Invalid};
+export enum Status {Success, Done, Error, Invalid};
 export enum Analysis {Yes, No, Invalid};
 
 /**
