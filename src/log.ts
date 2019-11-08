@@ -75,6 +75,7 @@ export class Message {
   static tryCompilerEnv = 'try to establish environment for compiler: {0}';
   static environment = 'environment for compiler is established: {0}';
   static generalEnv = 'general environment';
+  static selectOptions: 'Select additional options if necessary.'
 }
 
 export class Server {

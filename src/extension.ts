@@ -19,6 +19,7 @@ import {ProjectEngine } from './project';
 import {ProjectProvider} from './general';
 import {CalleeFuncProvider, CalleeFuncProviderState} from './calleeFunc';
 import * as t from './transformProvider';
+import server from './tools';
 
 /**
  * Open log file (log.Extension.log), returns true on success.
@@ -62,13 +63,16 @@ export function activate(context: vscode.ExtensionContext) {
   let start = vscode.commands.registerCommand(
     'tsar.start', (uri:vscode.Uri) => {
       vscode.workspace.openTextDocument(uri)
-        .then((success) => {return engine.start(success)})
+        .then((success) => {
+          return engine.start(success,
+            server.tools.find(t=>{return t.name === 'tsar'}));
+         })
         .then(
-          project => {
+          async project => {
             let state = project.providerState(ProjectProvider.scheme);
             state.onDidDisposeContent(() => {engine.stop(project)},
               null, context.subscriptions);
-            engine.runTool(project);
+            await engine.runTool(project);
             state.active = true;
             project.send(new msg.Statistic);
           },

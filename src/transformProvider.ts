@@ -14,6 +14,8 @@ import * as msg from './messages';
 import {DisposableLikeList, onReject} from './functions'; 
 import {Project, ProjectEngine, ProjectContentProvider,
   ProjectContentProviderState} from './project';
+import server from './tools';
+
 /**
  * Register transformation command.
  * 
@@ -26,9 +28,11 @@ export function registerCommands(
     subscriptions.push(vscode.commands.registerCommand(
       info.command, (uri:vscode.Uri) => {
         vscode.workspace.openTextDocument(uri)
-          .then((success) => {return engine.start(success) })
+          .then((success) => {return engine.start(success,
+            server.tools.find(t=>{return t.name === 'tsar'}));
+           })
           .then(
-            project => {
+            async project => {
               let state = project.providerState(TransformationProvider.scheme);
               vscode.window.withProgress({
                 location: vscode.ProgressLocation.Notification,
@@ -45,9 +49,9 @@ export function registerCommands(
                     }
                   });
                 });
-              }).then(value => {vscode.commands.executeCommand('tsar.stop', project.uri)});
+              }).then((value) => {vscode.commands.executeCommand('tsar.stop', project.uri)});
               state.active = true;
-              engine.runTool(project, info.run)
+              await engine.runTool(project, info.run)
               project.send('');
             },
             reason => { return onReject(reason, uri) })

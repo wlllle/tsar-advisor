@@ -18,6 +18,8 @@ import {ProjectProvider} from './general';
 import * as log from './log';
 import * as msg from './messages';
 
+type ToolT = {server:string};
+
 /**
  * This controls all currently active projects evaluated by the extension.
  */
@@ -126,7 +128,7 @@ export class ProjectEngine {
    * TODO (kaniandr@gmail.com): currently each project consists of a single
    * file, update to support projects configured with a help of *.json file.
    */
-  start(doc: vscode.TextDocument): Thenable<Project> {
+  start(doc: vscode.TextDocument, tool:ToolT): Thenable<Project> {
     return new Promise((resolve, reject) => {
       let project = this.project(doc.uri);
       if (project !== undefined) {
@@ -150,7 +152,7 @@ export class ProjectEngine {
       let prjDir = this._makeProjectDir(path.dirname(uri.fsPath));
       if (typeof prjDir != 'string')
         return reject(prjDir);
-      this._startServer(uri, <string>prjDir, this._environment, resolve, reject);
+      this._startServer(uri, <string>prjDir, tool, this._environment, resolve, reject);
       return undefined;
     })
   }
@@ -168,14 +170,43 @@ export class ProjectEngine {
   /**
    * Send response to run analysis or perform transformation.
    */
-  runTool(project: Project, query?: string) {
+  async runTool(project: Project, query?: string) {
     let cl = new msg.CommandLine(log.Extension.displayName);
     cl.Args[1] = project.uri.fsPath;
+    let tool:any = project.tool;
+    if (tool.options) {
+      let user_options = await vscode.window.showQuickPick(
+        tool.options as any[],
+        {
+          canPickMany: true,
+          ignoreFocusOut: true,
+          placeHolder: log.Message.selectOptions
+        });
+      if (user_options)
+        for (let option of user_options) {
+          if (option.selectFile) {
+            let selectedFile = await vscode.window.showOpenDialog(
+              Object.assign({canSelectMany: false}, option.selectFile));
+            if (selectedFile)
+              cl.Args.push(`${option.target}${selectedFile}`);
+          } else if (option.manualInput) {
+            let manualInput = await vscode.window.showInputBox({
+              ignoreFocusOut: true,
+              placeHolder: option.description,
+            });
+            if (manualInput)
+              cl.Args.push(manualInput);
+          } else {
+            cl.Args.push(option.target);
+          }
+        }
+    }
     if (query)
       cl.Query = query;
     cl.Output = path.join(project.dirname, log.Project.output);
     cl.Error = path.join(project.dirname, log.Project.error);
     project.send(cl);
+    return project;
   }
 
   /**
@@ -239,14 +270,14 @@ export class ProjectEngine {
    * @param env This parameter is used to specified environment of server
    *  execution.
    */
-  private _startServer(uri: vscode.Uri, prjDir: string, env: any, resolve: any, reject: any) {
+  private _startServer(uri: vscode.Uri, prjDir: string,
+      tool: ToolT, env: any, resolve: any, reject: any) {
     const pipe = this._pipe(uri);
     // {execArgv: []} disables --debug options otherwise the server.js tries to
     // use the same port as a main process for debugging and will not be run
     // in debug mode
     let options = {execArgv: [], env: env};
-    const server = child_process.fork(
-      path.join(__dirname, 'server.js'), [pipe], options);
+    const server = child_process.fork(tool.server, [pipe], options);
     server.on('error', (err) => {this._internalError(err)});
     server.on('close', () => {this._stop(uri);});
     server.on('exit', (code, signal) => {
@@ -260,7 +291,7 @@ export class ProjectEngine {
         if (data === log.Server.listening) {
           log.Log.logs[0].write(log.Message.listening);
           client = net.connect(pipe, () => {client.setEncoding('utf8')});
-          project = new Project(uri, prjDir, client, server);
+          project = new Project(uri, prjDir, tool, client, server);
           this._context.subscriptions.push(project);
           for (let scheme in this._providers) {
             let provider= this._providers[scheme];
@@ -486,6 +517,7 @@ export class Project {
   private _output: vscode.OutputChannel
   private _disposable: vscode.Disposable;
   private _isDisposed = false;
+  private _tool: ToolT;
 
   /**
    * Create a project with a specified uri.
@@ -496,7 +528,7 @@ export class Project {
    * @param client Socket to interconnect with TSAR analyzer.
    * @param server A standalone process where TSAR analyzer is running.
    */
-  constructor(projectUri: vscode.Uri, projectDir: string,
+  constructor(projectUri: vscode.Uri, projectDir: string, tool: {server:string},
       client: net.Socket, server: child_process.ChildProcess) {
     this._prjUri = projectUri;
     this._prjDir = projectDir;
@@ -505,7 +537,13 @@ export class Project {
     this._output = vscode.window.createOutputChannel(
       log.Terminal.displayName.replace('{0}', this.prjname));
     this._disposable = vscode.Disposable.from(this._output);
+    this._tool = tool;
   }
+
+  /**
+   * Return tool configuration which is used to analyze this project.
+   */
+  get tool(): ToolT { return this._tool; }
 
   /**
    * Dispose project and its data (sockets, processes, windows).
