@@ -120,7 +120,9 @@ function copyShared() {
   }
 }
 
-function nodeGypExec(cmd, args, cb_stdout, cb_end) {
+const child_process = require('child_process');
+
+function nodeGypExec() {
   const spawn = require('child_process').spawn;
   let child;
   let nodeGypArgs = [
@@ -132,7 +134,10 @@ function nodeGypExec(cmd, args, cb_stdout, cb_end) {
   if (config === 'Debug')
     nodeGypArgs.push('-d');
   if (os == 'win32') {
-    child = spawn('cmd.exe', [ '/c','node-gyp'].concat(nodeGypArgs));
+    let node_gyp = path.resolve(
+      child_process.execSync('npm bin').toString().trim(), 'node-gyp');
+    console.log(`Path to 'node-gyp' ${node_gyp}\n`);
+    child = spawn('cmd.exe', [ '/c',`${node_gyp}`].concat(nodeGypArgs));
   } else {
     child = spawn('node-gyp', nodeGypArgs);
   }
