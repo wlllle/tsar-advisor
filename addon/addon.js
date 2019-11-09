@@ -145,8 +145,12 @@ function nodeGypExec() {
     let date = new Date();
     console.log(`${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}` +
       ` - Build addon, node-gyp exited with code ${code}`);
+    if (code == 0 && noWatch)
+      copyAddon();
   });
   child.on('error', (err) => {console.log(err);});
+  child.stderr.on('data', data => {console.log(data.toString())});
+  child.stdout.on('data', data => {console.log(data.toString())});
 }
 
 // Rebuild addons and copy shared libraries to a specified output if they
