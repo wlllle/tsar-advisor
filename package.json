@@ -238,12 +238,14 @@
     "prepublish-clean": "rimraf out",
     "prepublish-ts": "tsc -p ./",
     "prepublish-css": "catw ./html/*.css > ./out/src/style.css",
-    "prepublish-addon": "node ./addon/addon.js -noW ../apc/sapfor/bcl ../vs/sapfor/analyzers/tsar/tools/tsar-server ./out/src",
+    "prepublish-addon": "node ./addon/addon.js  -noW ../apc/sapfor/bcl ../vs/sapfor/analyzers/tsar/tools/tsar-server ./out/src",
     "vscode:prepublish": "npm-run-all -n prepublish-clean prepublish-ts prepublish-css prepublish-addon",
     "watch-ts": "tsc -watch -p ./",
     "watch-css": "catw ./html/*.css -o ./out/src/style.css -v",
     "watch-addon": "node ./addon/addon.js -d ../apc/sapfor/bcl ../vs/sapfor/analyzers/tsar/tools/tsar-server ./out/src",
-    "watch": "npm-run-all -c -n -p watch-ts watch-css watch-addon"
+    "addon": "node ./addon/addon.js -noW -d ../apc/sapfor/bcl ../vs/sapfor/analyzers/tsar/tools/tsar-server ./out/src",
+    "watch": "npm-run-all -c -n -p watch-ts watch-css",
+    "watch-all": "npm-run-all -c -n -p watch-ts watch-css watch-addon"
   },
   "devDependencies": {
     "typescript": "^3.6.4",
