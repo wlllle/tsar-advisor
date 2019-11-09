@@ -306,7 +306,7 @@ export class LoopTreeProvider extends ProjectWebviewProvider {
           --currentLevel;
         }
         body += `
-        <div class="row py-2 text-center border-bottom">
+        <div class="row py-2 text-center border-bottom table-row">
           <div class="col-4 text-left border-right">
             ${'&emsp;'.repeat(loop.Level)}`;
         if (idx < func.Loops.length - 1 && func.Loops[idx + 1].Level > loop.Level) {
