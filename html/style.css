@@ -11,6 +11,10 @@
   background-color: var(--light);
 }
 
+.table-row-success {
+  background-color: honeydew;
+}
+
 .clear{
   padding: 0;
   display: block;

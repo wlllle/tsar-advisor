@@ -180,6 +180,7 @@ export class LoopTreeProvider extends ProjectWebviewProvider {
     body +=`
       <div class="row font-weight-bolder border-bottom py-3 text-center">
         <div class="col-4 text-left border-right">Functions and Loops</div>
+        <div class="col-1">Parallel</div>
         <div class="col-1">Canonical</div>
         <div class="col-1">Perfect</div>
         <div class="col-1">Exit</div>
@@ -193,7 +194,8 @@ export class LoopTreeProvider extends ProjectWebviewProvider {
       linkExit.query['FuncID'] = func.ID;
       linkExit.body = func.Exit === null ? '?' : func.Exit.toString();
       body += `
-      <div class="row py-2 text-center border-bottom table-row">
+      <div class="row py-2 text-center border-bottom table-row
+           ${func.Traits.Parallel == 'Yes' ? 'table-row-success' : ''}">
         <div class="col-4 text-left border-right">`;
       if (func.Traits.Loops == "Yes")
         if (!func.Loops.length) {
@@ -223,6 +225,7 @@ export class LoopTreeProvider extends ProjectWebviewProvider {
           ${gotoExpansionLocLink(project, func.StartLocation)}
           &minus;${gotoExpansionLocLink(project, func.EndLocation)}
         </div>
+        <div class="col-1">${this._checkTrait(func.Traits.Parallel)}</div>
         <div class="col-1"></div>
         <div class="col-1"></div>
         <div class="col-1">${commandLink(linkExit)}</div>
@@ -306,7 +309,8 @@ export class LoopTreeProvider extends ProjectWebviewProvider {
           --currentLevel;
         }
         body += `
-        <div class="row py-2 text-center border-bottom table-row">
+        <div class="row py-2 text-center border-bottom table-row
+                    ${loop.Traits.Parallel == 'Yes' ? 'table-row-success' : ''}">
           <div class="col-4 text-left border-right">
             ${'&emsp;'.repeat(loop.Level)}`;
         if (idx < func.Loops.length - 1 && func.Loops[idx + 1].Level > loop.Level) {
@@ -327,6 +331,9 @@ export class LoopTreeProvider extends ProjectWebviewProvider {
             <var>${loop.Type.toLowerCase()}</var> loop in <var>${func.Name}</var> at
               ${gotoExpansionLocLink(project, loop.StartLocation)}
               &minus;${gotoExpansionLocLink(project, loop.EndLocation)}
+          </div>
+          <div class="col-1 ">
+            ${this._checkTrait(loop.Traits.Parallel)}
           </div>
           <div class="col-1">${this._checkTrait(loop.Traits.Canonical)}</div>
           <div class="col-1">${this._checkTrait(loop.Traits.Perfect)}</div>

@@ -219,23 +219,23 @@ export interface Location {
   MacroColumn: number;
 }
 
-export interface TraitsLoops {
+export interface LoopTraits {
   IsAnalyzed: string;
   Perfect: string;
   InOut: string;
   Canonical: string;
   UnsafeCFG : string;
+  Parallel: string;
 }
 
 export interface Loop {
   ID: number;
   StartLocation: Location;
   EndLocation: Location;
-  Traits: TraitsLoops;
+  Traits: LoopTraits;
   Exit: number;
   Level: number;
   Type: string;
-  Hide: boolean;
 }
 
 export class LoopTree {
@@ -264,6 +264,7 @@ export interface FunctionTraits {
   Readonly: string;
   UnsafeCFG: string;
   InOut: string;
+  Parallel: string;
   Loops: string;
 }
 
