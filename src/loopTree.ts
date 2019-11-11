@@ -139,21 +139,21 @@ export class LoopTreeProvider extends ProjectWebviewProvider {
       project: project,
       title: log.CallGraph.io,
       body: '',
-      query: {ID: '', Attr: [msg.StatementAttr.InOut]}
+      query: {Attr: [msg.StatementAttr.InOut]}
     };
     let linkUnsafeCFG = {
       command: 'tsar.callee.func',
       project: project,
       title: log.CallGraph.unsafeCFG,
       body: '',
-      query: {ID: '', Attr: [msg.StatementAttr.UnsafeCFG]}
+      query: {Attr: [msg.StatementAttr.UnsafeCFG]}
     };
     let linkExit = {
       command: 'tsar.callee.func',
       project: project,
       title: log.CallGraph.exit,
       body: '',
-      query: {ID: '', Attr: [msg.StatementAttr.Exit]}
+      query: {Attr: [msg.StatementAttr.Exit]}
     };
     let body = `
     <!doctype html>
@@ -192,8 +192,11 @@ export class LoopTreeProvider extends ProjectWebviewProvider {
       if (!func.User)
         continue;
       linkInOut.query['FuncID'] = func.ID;
+      linkInOut.query['LoopID'] = 0;
       linkUnsafeCFG.query['FuncID'] = func.ID;
+      linkUnsafeCFG.query['LoopID'] = 0;
       linkExit.query['FuncID'] = func.ID;
+      linkExit.query['LoopID'] = 0;
       linkExit.body = func.Exit === null ? '?' : func.Exit.toString();
       body += `
       <div class="row py-2 text-center border-bottom table-row
