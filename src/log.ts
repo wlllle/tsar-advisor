@@ -26,6 +26,7 @@ export class Extension {
   static langauges = {'c' : 'C', 'cpp' : 'C++'};
   static style = path.resolve(__dirname, 'style.css');
   static logo = path.resolve(__dirname, 'images', 'logo.png');
+  static visNetwork = path.resolve(__dirname, '..', '..', 'node_modules', 'vis-network', 'dist');
   static bootstrap = path.resolve(__dirname, '..', '..', 'node_modules', 'bootstrap', 'dist');
   static jquery = path.resolve(__dirname, '..', '..', 'node_modules', 'jquery', 'dist');
   static log = path.resolve(__dirname, '..', '..', 'log', 'tsar.log');
@@ -91,6 +92,7 @@ export class Terminal {
 
 export class Command {
   static restart = 'Restart Now';
+  static gotoCode = 'Go to Source Code';
 }
 
 export class FunctionList {
@@ -102,10 +104,11 @@ export class FunctionList {
 }
 
 export class CallGraph {
-  static title = 'List of callee functions in {0}';
+  static title = 'List of calls from {0}';
   static io = 'View statements which perform in/out operations.';
   static unsafeCFG = 'View statements which lead to unsafe control flow.';
   static exit = 'View all possible exits from this region.';
+  static callList = 'List of calls';
 }
 
 export class Summary {

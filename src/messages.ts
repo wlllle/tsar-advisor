@@ -270,6 +270,7 @@ export interface FunctionTraits {
 
 export interface Function {
   ID: number;
+  User: boolean,
   Name: string;
   StartLocation: Location;
   EndLocation: Location;
@@ -299,17 +300,16 @@ export class FunctionList {
   }
 }
 
-export enum StatementAttr {Entry, Exit, InOut, UnsafeCFG};
+export enum StatementAttr {Entry, Exit, InOut, UnsafeCFG, MayNoReturn, MayReturnTwice, MayUnwind};
+export enum StatementKind {Break, Return, Goto, Call};
 
 export interface CalleeFuncInfo {
-  ID: string;
-  Level: number;
-  Name: string;
-  Locations: Location [];
+  Kind: StatementKind,
+  CalleeID: number;
+  StartLocation: Location [];
 }
 
 export class CalleeFuncList {
-  ID: string;
   FuncID: number;
   LoopID: number;
   Attr: StatementAttr [];
@@ -324,6 +324,14 @@ export class CalleeFuncList {
     for (let attr in this.Attr) {
       json.Attr[attr] = StatementAttr[this.Attr[attr]];
     }
+    json.Functions = [];
+    for (let info of this.Functions) {
+      json.FuncID.push({
+        Kind: StatementKind[info.Kind],
+        CalleeID: info.CalleeID,
+        StartLocation: JSON.stringify(info.StartLocation),
+      });
+    }
     return json;
   }
 
@@ -335,6 +343,14 @@ export class CalleeFuncList {
       Object.assign(obj, json);
       for (let attr in json['Attr']) {
         obj.Attr[attr] = StatementAttr[json['Attr'][attr]];
+      }
+      obj.Functions = [];
+      for (let info of json['Functions']) {
+        obj.Functions.push({
+          Kind: StatementKind[info.Kind],
+          CalleeID: info.CalleeID,
+          StartLocation: info.StartLocation
+        })
       }
       return obj;
     }
@@ -360,6 +376,7 @@ export interface CommandLineJSON extends MessageJSON {
   Input?: string;
   Output?: string;
   Error?: string;
+  Query?: string;
 }
 
 /**
@@ -391,9 +408,15 @@ export interface LoopTreeJSON extends MessageJSON {
   Loops: Loop [];
 }
 
+export interface CalleeFuncInfoJSON {
+  Kind: string,
+  CalleeID: number,
+  StartLocation: Location []
+}
+
 export interface CalleeFuncListJSON extends MessageJSON {
   FuncID: number;
   LoopID: number;
   Attr: string [];
-  Functions: CalleeFuncInfo [];
+  Functions: CalleeFuncInfoJSON [];
 }

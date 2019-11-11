@@ -40,7 +40,7 @@ export class ProjectWebviewProviderState<ProviderT extends ProjectWebviewProvide
   /**
    * Process response and promise data to build webview content.
    */
-  onResponse(response: any): Thenable<any> {
+  onResponse(response: any, project: Project): Thenable<any> {
     // If there were some responses and they already evaluated then let us
     // evaluate the last one.
     return new Promise(resolve => {
@@ -159,7 +159,7 @@ export abstract class ProjectWebviewProvider implements ProjectContentProvider{
     let response =
       project.response !== undefined &&
       this._needToHandle(project.response) ? project.response : undefined;
-    return state.onResponse(response).then((data: any) => {
+    return state.onResponse(response, project).then((data: any) => {
       if (!state.active)
         return Promise.resolve('');
       return new Promise((resolve, reject) => {

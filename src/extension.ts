@@ -146,23 +146,15 @@ export function activate(context: vscode.ExtensionContext) {
       let project = engine.project(uri);
       let state = project.providerState(
         CalleeFuncProvider.scheme) as CalleeFuncProviderState;
-      state.active = true;
-      let funclist = new msg.CalleeFuncList;
+      let request = new msg.CalleeFuncList;
       let query = JSON.parse(uri.query);
-      funclist.ID = query.ID;
-      funclist.FuncID = query.FuncID;
-      funclist.Attr = query.Attr;
-      if ('LoopID' in query) {
-        funclist.LoopID = query.LoopID;
-      } else {
-        funclist.LoopID = 0;
-      }
-      if (funclist.ID == '') {
-        state.data = funclist;
-      } else {
-        state.data.ID = funclist.ID;
-      }
-      project.send(funclist);
+      request.FuncID = query.FuncID;
+      request.Attr = query.Attr;
+      request.LoopID = 'LoopID' in query ? query.LoopID : 0;
+      // Dispose current webview if required request is new.
+      state.active = false;
+      state.active = true;
+      project.send(request);
     });
   context.subscriptions.push(start, stop, openProject, showCalleeFunc);
 }

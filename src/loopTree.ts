@@ -189,6 +189,8 @@ export class LoopTreeProvider extends ProjectWebviewProvider {
         <div class="col-1">Unsafe CFG</div>
       </div>`;
     for (let func of funclst.Functions) {
+      if (!func.User)
+        continue;
       linkInOut.query['FuncID'] = func.ID;
       linkUnsafeCFG.query['FuncID'] = func.ID;
       linkExit.query['FuncID'] = func.ID;

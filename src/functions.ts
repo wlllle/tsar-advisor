@@ -165,7 +165,7 @@ export function gotoSpellingLocLink({ project, body, line, column }:
     }):string {
   return commandLink({
     command: 'tsar.open-project', project,
-    title: 'Go to Source Code', body,
+    title: log.Command.gotoCode, body,
     query: JSON.stringify({Line: line, Column: column})
   });
 }
@@ -232,6 +232,16 @@ export function bootstrapJSLink(
 }
 
 /**
+ * Return html to use VisNetwork JS scripts.
+ * @param updateUri A function to update uri before it is inserted into html.
+ */
+export function visNetworkJSLink(
+    updateUri: UpdateUriFunc = (uri => {return uri })): string {
+  return `<script src = ${updateUri(vscode.Uri.file(
+    path.resolve(log.Extension.visNetwork, 'vis-network.min.js')))}></script>`
+}
+
+/**
  * Return html to use JQuery JS scripts.
  * @param updateUri A function to update uri before it is inserted into html.
  */
@@ -246,15 +256,18 @@ export function jqueryJSLink(
  * @param updateUri A function to update uri before it is inserted into html.
  */
 export function headHtml(
-    updateUri: UpdateUriFunc = (uri => { return uri })): string {
+    updateUri: UpdateUriFunc = (uri => { return uri }),
+    {bootstrap, visNetwork}:{ bootstrap: boolean, visNetwork: boolean} =
+      {bootstrap: true, visNetwork: false}): string {
   return `
     <head>
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-      ${bootstrapCSSLink(updateUri)}
+      ${bootstrap ? bootstrapCSSLink(updateUri): ''}
       ${styleLink(updateUri)}
-      ${jqueryJSLink(updateUri)}
-      ${bootstrapJSLink(updateUri)}
+      ${bootstrap ? jqueryJSLink(updateUri): ''}
+      ${bootstrap ? bootstrapJSLink(updateUri): ''}
+      ${visNetwork ? visNetworkJSLink(updateUri): ''}
     </head>
   `;
 }
