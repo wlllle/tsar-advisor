@@ -230,10 +230,14 @@ export class LoopTreeProvider extends ProjectWebviewProvider {
         <div class="col-1">${this._checkTrait(func.Traits.Parallel)}</div>
         <div class="col-1"></div>
         <div class="col-1"></div>
-        <div class="col-1">${commandLink(linkExit)}</div>
-        <div class="col-1">${this._checkTrait(func.Traits.InOut, linkInOut)}</div>
+        <div class="col-1">${func.Exit !== null ? commandLink(linkExit) : '?'}</div>
+        <div class="col-1">
+          ${this._checkTrait(func.Traits.InOut, func.Exit !== null ? linkInOut : undefined)}
+        </div>
         <div class="col-1">${this._checkTrait(func.Traits.Readonly)}</div>
-        <div class="col-1">${this._checkTrait(func.Traits.UnsafeCFG, linkUnsafeCFG)}</div>
+        <div class="col-1">
+          ${this._checkTrait(func.Traits.UnsafeCFG, func.Exit !== null ? linkUnsafeCFG : undefined)}
+        </div>
       </div>`;
       if (func.Traits.Loops == "No" || !func.Loops.length)
         continue;
@@ -339,10 +343,16 @@ export class LoopTreeProvider extends ProjectWebviewProvider {
           </div>
           <div class="col-1">${this._checkTrait(loop.Traits.Canonical)}</div>
           <div class="col-1">${this._checkTrait(loop.Traits.Perfect)}</div>
-          <div class="col-1">${commandLink(linkExit)}</div>
-          <div class="col-1">${this._checkTrait(loop.Traits.InOut, linkInOut)}</div>
+          <div class="col-1">${loop.Exit !== null ? commandLink(linkExit) : ''}</div>
+          <div class="col-1">
+            ${this._checkTrait(loop.Traits.InOut,
+               loop.Exit !== null ? linkInOut : undefined)}
+           </div>
           <div class="col-1"></div>
-          <div class="col-1">${this._checkTrait(loop.Traits.UnsafeCFG, linkUnsafeCFG)}</div>
+          <div class="col-1">
+            ${this._checkTrait(loop.Traits.UnsafeCFG,
+               loop.Exit !== null ? linkUnsafeCFG : undefined)}
+          </div>
         </div>`;
       }
       body += `</div>`;
