@@ -279,7 +279,7 @@ export class LoopTreeProvider extends ProjectWebviewProvider {
           let parentLoop = func.Loops[idx - 1];
           body += `
           <div class="collapse ${state.isSubtreeHidden(parentLoop) ? '' : 'show'}"
-               id="loopTree-${func.ID}-${func.Loops[idx - 1].ID}">`;
+               id="loopTree-${func.ID}-${parentLoop.ID}">`;
           body += `
           <script>
             (function () {
@@ -314,8 +314,8 @@ export class LoopTreeProvider extends ProjectWebviewProvider {
           </script>`;
           ++currentLevel;
         } else if (loop.Level < currentLevel) {
-          body += `</div>`;
-          --currentLevel;
+          body += '</div>'.repeat(currentLevel - loop.Level);
+          currentLevel = loop.Level;
         }
         body += `
         <div class="row py-2 text-center border-bottom table-row
@@ -335,6 +335,8 @@ export class LoopTreeProvider extends ProjectWebviewProvider {
                aria-controls="loopTree-${func.ID}-${loop.ID}">
               ${isSubtreeHidden ? '&plus;' : '&minus;'}
             </a>`;
+        } else {
+          body += '&emsp;'
         }
         body += `
             <var>${loop.Type.toLowerCase()}</var> loop in <var>${func.Name}</var> at
@@ -358,6 +360,7 @@ export class LoopTreeProvider extends ProjectWebviewProvider {
           </div>
         </div>`;
       }
+      body += '</div>'.repeat(currentLevel - 1);
       body += `</div>`;
     }
     body += `</body></html>`;
