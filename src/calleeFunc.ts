@@ -273,7 +273,7 @@ export class CalleeFuncProvider extends ProjectWebviewProvider {
           case msg.StatementAttr.Exit: subtitle = log.CallGraph.exit; break;
           case msg.StatementAttr.UnsafeCFG: subtitle = log.CallGraph.unsafeCFG; break;
         }
-      } else {
+      } else if (info.Target.Attr.length > 0) {
         subtitle = log.CallGraph.unsafeCFG
         for (let attr of info.Target.Attr)
           if (attr != msg.StatementAttr.UnsafeCFG && attr != msg.StatementAttr.MayNoReturn &&

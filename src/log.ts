@@ -109,6 +109,8 @@ export class CallGraph {
   static unsafeCFG = 'View statements which lead to unsafe control flow.';
   static exit = 'View all possible exits from this region.';
   static callList = 'List of calls';
+  static from = 'View calls from a region';
+  static callees = 'Callees';
 }
 
 export class Summary {

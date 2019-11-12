@@ -134,6 +134,13 @@ export class LoopTreeProvider extends ProjectWebviewProvider {
     let state = project.providerState(
       LoopTreeProvider.scheme) as LoopTreeProviderState;
     this._registerListeners(state, funclst);
+    let linkCallees = {
+      command: 'tsar.callee.func',
+      project: project,
+      title: log.CallGraph.from,
+      body: '&#10167;',
+      query: {Attr: []}
+    };
     let linkInOut = {
       command: 'tsar.callee.func',
       project: project,
@@ -191,6 +198,8 @@ export class LoopTreeProvider extends ProjectWebviewProvider {
     for (let func of funclst.Functions) {
       if (!func.User)
         continue;
+      linkCallees.query['FuncID'] = func.ID;
+      linkCallees.query['LoopID'] = 0;
       linkInOut.query['FuncID'] = func.ID;
       linkInOut.query['LoopID'] = 0;
       linkUnsafeCFG.query['FuncID'] = func.ID;
@@ -229,6 +238,7 @@ export class LoopTreeProvider extends ProjectWebviewProvider {
           <var>${func.Name}</var> at
           ${gotoExpansionLocLink(project, func.StartLocation)}
           &minus;${gotoExpansionLocLink(project, func.EndLocation)}
+          ${func.Exit !== null ? commandLink(linkCallees) : ''}
         </div>
         <div class="col-1">${this._checkTrait(func.Traits.Parallel)}</div>
         <div class="col-1"></div>
@@ -271,6 +281,7 @@ export class LoopTreeProvider extends ProjectWebviewProvider {
       let currentLevel = 1;
       for (let idx = 0; idx < func.Loops.length; ++idx) {
         let loop = func.Loops[idx];
+        linkCallees.query['LoopID'] = loop.ID;
         linkInOut.query['LoopID'] = loop.ID;
         linkUnsafeCFG.query['LoopID'] = loop.ID;
         linkExit.query['LoopID'] = loop.ID;
@@ -342,6 +353,7 @@ export class LoopTreeProvider extends ProjectWebviewProvider {
             <var>${loop.Type.toLowerCase()}</var> loop in <var>${func.Name}</var> at
               ${gotoExpansionLocLink(project, loop.StartLocation)}
               &minus;${gotoExpansionLocLink(project, loop.EndLocation)}
+            ${loop.Exit !== null ? commandLink(linkCallees) : ''}
           </div>
           <div class="col-1 ">
             ${this._checkTrait(loop.Traits.Parallel)}
