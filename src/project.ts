@@ -187,8 +187,8 @@ export class ProjectEngine {
           if (option.selectFile) {
             let selectedFile = await vscode.window.showOpenDialog(
               Object.assign({canSelectMany: false}, option.selectFile));
-            if (selectedFile)
-              cl.Args.push(`${option.target}${selectedFile}`);
+            if (selectedFile && selectedFile.length > 0)
+              cl.Args.push(`${option.target}${selectedFile[0].fsPath}`);
           } else if (option.manualInput) {
             let manualInput = await vscode.window.showInputBox({
               ignoreFocusOut: true,
