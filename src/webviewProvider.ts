@@ -85,6 +85,7 @@ export class ProjectWebviewProviderState<ProviderT extends ProjectWebviewProvide
         {
           enableCommandUris: true,
           enableScripts: true,
+         enableFindWidget: true,
         }
       );
       this._panel.onDidDispose(() => {
