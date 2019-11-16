@@ -30,6 +30,16 @@
   ],
   "main": "./out/src/extension",
   "contributes": {
+    "snippets": [
+      {
+        "language": "c",
+        "path": "./snippets.json"
+      },
+      {
+        "language": "cpp",
+        "path": "./snippets.json"
+      }
+    ],
     "commands": [
       {
         "command": "tsar.start",

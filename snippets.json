@@ -1,0 +1,22 @@
+{
+  "TSAR Inline Function Call": {
+    "prefix": "#pragma spf transform inline",
+    "body": [ "#pragma spf transform inline${TM_SELECTED_TEXT/([\\s\\S]+)/\n{\n$1\n}/}" ],
+    "description": "Use TSAR to inline function call"
+  },
+  "TSAR Propagate Expression": {
+  "prefix": "#pragma spf transform propagate",
+    "body": [ "#pragma spf transform propagate${TM_SELECTED_TEXT/([\\s\\S]+)/\n{\n$1\n}/}" ],
+    "description": "Use TSAR to propagate expressions"
+  },
+  "TSAR Rename Local": {
+    "prefix": "#pragma spf transform rename",
+    "body": [ "#pragma spf transform rename${TM_SELECTED_TEXT/([\\s\\S]+)/\n{\n$1\n}/}" ],
+    "description": "Use TSAR to rename local variables in a specified scope. Each variable will have unique name in the scope"
+  },
+  "TSAR Check": {
+    "prefix": "#pragma spf transform check",
+    "body": [ "#pragma spf check ${1|nomacro|} ${TM_SELECTED_TEXT/([\\s\\S]+)/\n{\n$1\n}/}" ],
+      "description": "Use TSAR to check user-defined properties, for example, absence of macro in a specified scope."
+  }
+}
