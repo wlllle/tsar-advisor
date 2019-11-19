@@ -2,7 +2,7 @@
   "name": "tsar-advisor",
   "displayName": "TSAR Advisor",
   "description": "This tool performs user-guided program transformations and proposes some useful information about a program to simplify its parallelization.",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "publisher": "DVM",
   "homepage": "http://dvm-system.org",
   "keywords": [
