@@ -201,6 +201,7 @@ export class ProjectEngine {
           }
         }
     }
+    project.arguments = cl.Args;
     if (query)
       cl.Query = query;
     cl.Output = path.join(project.dirname, log.Project.output);
@@ -518,6 +519,8 @@ export class Project {
   private _disposable: vscode.Disposable;
   private _isDisposed = false;
   private _tool: ToolT;
+
+  public arguments: msg.Arguments;
 
   /**
    * Create a project with a specified uri.

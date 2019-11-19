@@ -70,6 +70,7 @@ export interface Arguments {
   [index: number]: string;
   length: number;
   push(item: string): number;
+  join(separator?:string): string;
 }
 
 export enum Status {Success, Done, Error, Invalid};

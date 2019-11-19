@@ -70,6 +70,9 @@ export class ProjectProvider extends ProjectWebviewProvider {
               ${numberHtml(loopCount)} ${loopCount !== 1 ? 'loops' : 'loop'}${htmlLpNotAnalyzed}.
           </p>
           ${this._listOfTraits(stat)}
+          <p>
+            ${project.arguments.join(' ')}
+          </p>
         </div>
       </body>
     </html>`;
