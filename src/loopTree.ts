@@ -110,9 +110,6 @@ function isFunction(obj: msg.Function|msg.Loop): obj is msg.Function {
     return (obj as msg.Function).Loops !== undefined;
 }
 
-/**
- * Provides a general information about analyzed project.
- */
 export class LoopTreeProvider extends ProjectWebviewProvider {
   static scheme = "tsar-looptree";
 
@@ -134,6 +131,13 @@ export class LoopTreeProvider extends ProjectWebviewProvider {
     let state = project.providerState(
       LoopTreeProvider.scheme) as LoopTreeProviderState;
     this._registerListeners(state, funclst);
+    let aliasTree = {
+      command: 'tsar.loop.alias',
+      project: project,
+      title: log.AliasTree.build,
+      body: '&#10070;',
+      query: {}
+    };
     let linkCallees = {
       command: 'tsar.callee.func',
       project: project,
@@ -198,6 +202,7 @@ export class LoopTreeProvider extends ProjectWebviewProvider {
     for (let func of funclst.Functions) {
       if (!func.User)
         continue;
+      aliasTree.query['FuncID'] = func.ID;
       linkCallees.query['FuncID'] = func.ID;
       linkCallees.query['LoopID'] = 0;
       linkInOut.query['FuncID'] = func.ID;
@@ -226,7 +231,7 @@ export class LoopTreeProvider extends ProjectWebviewProvider {
           <a id="collapse-loopTree-${func.ID}"
               class = "source-link"
               title="${log.FunctionList.loopTree.replace('{0}',
-                         isSubtreeHidden ? log.FunctionList.show 
+                         isSubtreeHidden ? log.FunctionList.show
                                          : log.FunctionList.hide)}"
               data-toggle="collapse" href="#loopTree-${func.ID}" role="button"
               aria-expanded="${isSubtreeHidden ? 'false': 'true'}"
@@ -281,6 +286,7 @@ export class LoopTreeProvider extends ProjectWebviewProvider {
       let currentLevel = 1;
       for (let idx = 0; idx < func.Loops.length; ++idx) {
         let loop = func.Loops[idx];
+        aliasTree.query['LoopID'] = loop.ID;
         linkCallees.query['LoopID'] = loop.ID;
         linkInOut.query['LoopID'] = loop.ID;
         linkUnsafeCFG.query['LoopID'] = loop.ID;
@@ -354,6 +360,7 @@ export class LoopTreeProvider extends ProjectWebviewProvider {
               ${gotoExpansionLocLink(project, loop.StartLocation)}
               &minus;${gotoExpansionLocLink(project, loop.EndLocation)}
             ${loop.Exit !== null ? commandLink(linkCallees) : ''}
+            ${loop.Exit !== null ? commandLink(aliasTree) : ''}
           </div>
           <div class="col-1 ">
             ${this._checkTrait(loop.Traits.Parallel)}

@@ -113,6 +113,17 @@ export class CallGraph {
   static callees = 'Callees';
 }
 
+export class AliasTree {
+  static title = 'Alias tree for {0}';
+  static build = 'Build alias tree';
+  static nodeSelf = 'Memory in node';
+  static nodeCovered = 'Covered memory';
+  static nodeOverlap = 'Overlap with memory';
+  static traisList = 'List of traits';
+  static hasSeparate = 'Trait is set for some of memory locations separately';
+  static hasCombined = 'Trait is set for the whole node';
+}
+
 export class Summary {
   static title = 'Analysis result summary for {0}';
 }

@@ -271,7 +271,7 @@ export interface FunctionTraits {
 
 export interface Function {
   ID: number;
-  User: boolean,
+  User: boolean;
   Name: string;
   StartLocation: Location;
   EndLocation: Location;
@@ -362,6 +362,60 @@ export class CalleeFuncList {
   }
 }
 
+export interface SourceObject {
+  ID: number;
+  Name: string;
+  DeclLocation: Location;
+}
+
+export interface MemoryLocation {
+  Address: string;
+  Size: number;
+  Locations: Location[];
+  Traits: {};
+  Object: SourceObject;
+}
+
+export interface AliasNode {
+  ID: number;
+  Kind: string;
+  Coverage: boolean;
+  Traits: string[];
+  SelfMemory: MemoryLocation [];
+  CoveredMemory: MemoryLocation [];
+}
+
+export interface AliasEdge {
+  From: number;
+  To: number;
+  Kind: string;
+}
+
+export class AliasTree {
+  FuncID: number;
+  LoopID: number;
+  Nodes: AliasNode [];
+  Edges: AliasEdge [];
+
+  toJSON(): AliasTreeJSON {
+    return Object.assign({name: AliasTree.name}, this);
+  }
+
+  static fromJSON(json: AliasTreeJSON|string) : AliasTree {
+    if (typeof json === 'string') {
+      return JSON.parse(json, AliasTree.reviver);
+    } else {
+      let obj = Object.create(AliasTree.prototype);
+      return Object.assign(obj, json);
+    }
+  }
+
+  static reviver(key: string, value: any): any {
+    return key === '' ? AliasTree.fromJSON(value) : value;
+  }
+}
+
+
 /**
  * JSON representation of a request identifier.
  */
@@ -420,4 +474,11 @@ export interface CalleeFuncListJSON extends MessageJSON {
   LoopID: number;
   Attr: string [];
   Functions: CalleeFuncInfoJSON [];
+}
+
+export interface AliasTreeJSON extends MessageJSON {
+  FuncID: number;
+  LoopID: number;
+  Nodes: AliasNode [];
+  Edges: AliasEdge [];
 }

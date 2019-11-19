@@ -30,7 +30,8 @@ export class ProjectEngine {
     msg.Statistic,
     msg.FunctionList,
     msg.LoopTree,
-    msg.CalleeFuncList
+    msg.CalleeFuncList,
+    msg.AliasTree
   );
   private _context: vscode.ExtensionContext;
   private _providers = new Map<string, ProjectContentProvider>();

@@ -13,6 +13,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as log from './log';
 import * as lt from './loopTree';
+import * as at from './aliasTree';
 import * as msg from './messages';
 import {onReject} from './functions';
 import {ProjectEngine } from './project';
@@ -58,7 +59,8 @@ export function activate(context: vscode.ExtensionContext) {
     [ProjectProvider.scheme, new ProjectProvider],
     [CalleeFuncProvider.scheme, new CalleeFuncProvider],
     [lt.LoopTreeProvider.scheme, new lt.LoopTreeProvider],
-    [t.TransformationProvider.scheme, new t.TransformationProvider]
+    [t.TransformationProvider.scheme, new t.TransformationProvider],
+    [at.AliasTreeProvider.scheme, new at.AliasTreeProvider]
   );
   let start = vscode.commands.registerCommand(
     'tsar.start', (uri:vscode.Uri) => {
@@ -141,6 +143,7 @@ export function activate(context: vscode.ExtensionContext) {
         });
     })
   lt.registerCommands(engine, context.subscriptions);
+  at.registerCommands(engine, context.subscriptions);
   let showCalleeFunc = vscode.commands.registerCommand('tsar.callee.func',
     (uri:vscode.Uri) => {
       let project = engine.project(uri);
