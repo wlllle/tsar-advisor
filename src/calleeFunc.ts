@@ -34,7 +34,7 @@ export class CalleeFuncProviderState extends ProjectWebviewProviderState<CalleeF
   actual(request: any): boolean {
     if (request instanceof msg.FunctionList)
       return this.data !== undefined &&
-             this.data.functions !== undefined;
+             this.data.Functions !== undefined;
     return false;
   }
 
@@ -327,7 +327,7 @@ export class CalleeFuncProvider extends ProjectWebviewProvider {
             network.on('click', selected => {
               const callInfo = document.getElementById('callInfo');
               if (!selected.edges || selected.edges.length != 1 ||
-                  selected.nodes && selected.nodes.lengh > 0) {
+                  selected.nodes && selected.nodes.length > 0) {
                 callInfo.innerHTML = '';
                 return;
               }
