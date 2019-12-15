@@ -134,7 +134,7 @@ export function commandLink({ command, project, title, body, query }:
   return `
     <a class="source-link"
        href="${encodeURI(
-         'command:' + command + '?' + JSON.stringify(uri))}"
+         `command:${command}?${encodeURIComponent(JSON.stringify(uri))}`)}"
        title="${title}">
       ${body}</a>`;
 }
