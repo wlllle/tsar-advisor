@@ -355,6 +355,18 @@ export class ProjectEngine {
       let array = response.split(log.Project.delimiter);
       if (array[array.length - 1] == '')
         array.pop(); // ignore the last empty substring
+      if (array.length == 0)
+        return;
+      if (response.substr(response.length - log.Project.delimiter.length) != log.Project.delimiter) {
+        if (array.length == 1) {
+          project.spliceRawResponse(array[0]);
+          return;
+        }
+        array[0] = project.extractRawResponse() + array[0];
+        project.spliceRawResponse(array.pop());
+      } else {
+        array[0] = project.extractRawResponse() + array[0];
+      }
       for (let data of array) {
         if (data === 'REJECT')
           throw new Error(log.Error.rejected);
@@ -513,6 +525,7 @@ export class Project {
   private _prjDir: string;
   private _client: net.Socket;
   private _server: child_process.ChildProcess;
+  private _rawResponse = '';
   private _responses = [];
   private _newResponse = 0;
   private _providers = new Map<string, ProjectContentProviderState>();
@@ -622,6 +635,28 @@ export class Project {
     this._responses.push(response);
     this._providers.forEach(state => {state.provider.update(this)});
     this._pop();
+  }
+
+  /**
+   * Write chunk to the end of a raw response buffer.
+   *
+   * If a size of response exceeds the size of internal buffer
+   * which is used to exchange data between client and server,
+   * the entire response is split into chunks. Then the client
+   * subsequently receives this chunks. It may use this method
+   * to merge these chunks and to store the result in a buffer.
+   */
+  spliceRawResponse(chunk: string) {
+    this._rawResponse += chunk;
+  }
+
+  /**
+   * Clear the raw response buffer and return its value.
+   */
+  extractRawResponse() : string {
+    let tmp = this._rawResponse;
+    this._rawResponse = '';
+    return tmp;
   }
 
   /**
