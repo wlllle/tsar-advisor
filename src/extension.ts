@@ -38,7 +38,10 @@ function openLog(): boolean {
       fs.mkdirSync(dir);
       newDir = true;
     }
-    log.Log.logs.push(new log.Log(log.Extension.log));
+    let userConfig = vscode.workspace.getConfiguration(log.Extension.id);
+    let logOn = userConfig.has('advanced.log.enabled') &&
+                userConfig.get('advanced.log.enabled') === true
+    log.Log.logs.push(new log.Log(log.Extension.log, logOn));
     if (newDir)
       log.Log.logs[0].write(log.Message.createLog);
   }
@@ -53,6 +56,13 @@ function openLog(): boolean {
 export function activate(context: vscode.ExtensionContext) {
   if (!openLog())
     return;
+  context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(e => {
+    if (e.affectsConfiguration(`${log.Extension.id}.advanced.log.enabled`)) {
+      let userConfig = vscode.workspace.getConfiguration(log.Extension.id);
+      log.Log.logs[0].enabled = userConfig.has('advanced.log.enabled') &&
+                                userConfig.get('advanced.log.enabled') === true;
+    }
+  }));
   log.Log.logs[0].write(log.Message.extension);
   let engine = new ProjectEngine(context);
   engine.register(

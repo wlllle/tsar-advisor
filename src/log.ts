@@ -21,6 +21,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 
 export class Extension {
+  static id = 'tsar-advisor';
   static displayName = 'TSAR Advisor';
   static url = 'http://dvm-system.org';
   static langauges = {'c' : 'C', 'cpp' : 'C++'};
@@ -64,6 +65,8 @@ export class Error {
 }
 
 export class Message {
+  static enableLog = 'log is enabled';
+  static disableLog = 'log is disabled';
   static createLog = 'log file is created';
   static extension = 'extension is activated';
   static active = 'analysis session is activated for {0}';
@@ -144,15 +147,29 @@ export class Log {
   private _log: fs.WriteStream;
   private _path: string;
   private _fd: number;
+  private _enabled: boolean;
+
+  set enabled(flag: boolean) {
+    if (flag) {
+      this._enabled = flag;
+      this.write(Message.enableLog);
+    } else {
+      this.write(Message.disableLog);
+      this._enabled = flag;
+    }
+  }
+
+  get enabled() { return this._enabled; }
 
   /**
    * Open a specified file in append mode and prepare to log data. In case of
    * errors this function throws exception.
    */
-  constructor(path: string) {
+  constructor(path: string, enabled:boolean = false) {
     this._path = path;
     this._fd = fs.openSync(path, 'a');
     this._log = fs.createWriteStream(path, {fd: this._fd, flags: 'a'});
+    this.enabled = enabled;
   }
 
   dispose() {
@@ -163,7 +180,8 @@ export class Log {
    * Write '<date> <data>' string in the log file.
    */
   write(data: string) {
-
+    if (!this.enabled)
+      return;
     let now = new Date;
     let nowStr = now.toLocaleString('en-US', {
       year: 'numeric',
@@ -174,12 +192,7 @@ export class Log {
       minute: 'numeric',
       second: 'numeric',
     });
-    this._write(`${nowStr}:${now.getMilliseconds()} ${data}\n`);
-  }
-
-  private _write(data: string) {
-    if (!this._log.write(data))
-      this._log.once('drain', () => {this._write(data)});
+    this._log.write(`${nowStr}:${now.getMilliseconds()} ${data}\n`);
   }
 
   get path(): string { return this._path; }

@@ -54,6 +54,32 @@ export class ProjectEngine {
   }
 
   /**
+   * Update compilation environment according to the user configuration.
+   */
+  private _configureUnixEnv() {
+    let userConfig = vscode.workspace.getConfiguration(log.Extension.id);
+    if (userConfig.has("compilation.cIncludePath")) {
+      let list: [] = userConfig.get('compilation.cIncludePath');
+      if (this._environment['C_INCLUDE_PATH'] === undefined)
+        this._environment['C_INCLUDE_PATH'] = list.join(':');
+      else
+        this._environment['C_INCLUDE_PATH'] += `:${list.join(':')}`;
+    }
+    if (userConfig.has("compilation.c++IncludePath")) {
+      let list: [] = userConfig.get('compilation.c++IncludePath');
+      if (this._environment['CPLUS_INCLUDE_PATH'] === undefined)
+        this._environment['CPLUS_INCLUDE_PATH'] = list.join(':');
+      else
+        this._environment['CPLUS_INCLUDE_PATH'] += `:${list.join(':')}`;
+    }
+    log.Log.logs[0].write(
+      log.Message.environment.replace('{0}', '{'
+        + `"C_INCLUDE_PATH": "${this._environment['C_INCLUDE_PATH']}",`
+        + `"CPLUS_INCLUDE_PATH": "${this._environment['CPLUS_INCLUDE_PATH']}"`
+        + '}'));
+  }
+
+  /**
    * Create engine is a specified extension context.
    */
   constructor(context: vscode.ExtensionContext) {
@@ -65,7 +91,13 @@ export class ProjectEngine {
       else
         this._environment['LD_LIBRARY_PATH'] += `:${__dirname}`;
       log.Log.logs[0].write(
-        log.Message.environment.replace('{0}', `LD_LIBRARY_PATH=${this._environment['LD_LIBRARY_PATH']}`));
+        log.Message.environment.replace('{0}',
+         `{"LD_LIBRARY_PATH": "${this._environment['LD_LIBRARY_PATH']}"}`));
+      this._configureUnixEnv();
+      this._context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(e => {
+        if (e.affectsConfiguration(`${log.Extension.id}.compilation`))
+          this._configureUnixEnv();
+      }));
       return;
     }
     this._environment = establishVSEnvironment((err) => {

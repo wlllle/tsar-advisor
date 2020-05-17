@@ -30,6 +30,26 @@
   ],
   "main": "./out/src/extension",
   "contributes": {
+    "configuration":[
+      {
+        "title": "TSAR Advisor",
+        "properties": {
+          "tsar-advisor.compilation.cIncludePath" : {
+            "description": "Specifies a list of directories to look for header files while C language is processed.",
+            "type": "array"
+          },
+          "tsar-advisor.compilation.c++IncludePath" : {
+            "description": "Specifies a list of directories to look for header files while C++ language is processed.",
+            "type": "array"
+          },
+          "tsar-advisor.advanced.log.enabled" : {
+            "description": "Enable logging. Attention, the size of the log file is not limited. The data will be written to the log file while disk space is available.",
+            "type": "boolean",
+            "default": false
+          }
+        }
+      }
+    ],
     "snippets": [
       {
         "language": "c",
