@@ -13,7 +13,7 @@ import * as fs from 'fs';
 import * as net from 'net';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import {establishVSEnvironment} from './functions';
+import {establishVSEnvironment, establishLinuxEnvironment} from './functions';
 import {ProjectProvider} from './general';
 import * as log from './log';
 import * as msg from './messages';
@@ -56,7 +56,7 @@ export class ProjectEngine {
   /**
    * Update compilation environment according to the user configuration.
    */
-  private _configureCompilerEnv() {
+  private _configureCompilerUserEnv() {
     let userConfig = vscode.workspace.getConfiguration(log.Extension.id);
     if (userConfig.has("compilation.cIncludePath")) {
       let list: [] = userConfig.get('compilation.cIncludePath');
@@ -80,27 +80,22 @@ export class ProjectEngine {
   }
 
   private _configureEnvironment() {
-    let userConfig = vscode.workspace.getConfiguration(log.Extension.id);
-    if (!process.platform.match(/^win/i)) {
-      if (userConfig.get('advanced.environment.enabled') === true)
-        this._environment = process.env;
-      if (this._environment['LD_LIBRARY_PATH'] === undefined)
-        this._environment['LD_LIBRARY_PATH'] = __dirname;
+    let onerror = (err) => {
+      if (err instanceof Error)
+        log.Log.logs[0].write(
+          log.Message.environment.replace('{0}', err.message));
       else
-        this._environment['LD_LIBRARY_PATH'] += `:${__dirname}`;
-      log.Log.logs[0].write(
-        log.Message.environment.replace('{0}',
-         `{"LD_LIBRARY_PATH": "${this._environment['LD_LIBRARY_PATH']}"}`));
-    } else if (userConfig.get('advanced.environment.enabled') === true) {
-      this._environment = establishVSEnvironment((err) => {
-        if (err instanceof Error)
-          log.Log.logs[0].write(
-            log.Message.environment.replace('{0}', err.message));
-        else
-          log.Log.logs[0].write(
-            log.Message.environment.replace('{0}', err));
-      });
-      if (this._environment === undefined) {
+        log.Log.logs[0].write(
+          log.Message.environment.replace('{0}', err));
+    };
+    let userConfig = vscode.workspace.getConfiguration(log.Extension.id);
+    if (userConfig.get('advanced.environment.enabled') === true) {
+      let compilerEnv;
+      if (!process.platform.match(/^win/i))
+        compilerEnv = establishLinuxEnvironment(onerror, userConfig.get('advanced.environment.linuxCCompiler'));
+      else
+        compilerEnv = establishVSEnvironment(onerror);
+      if (compilerEnv[0] === undefined) {
         log.Log.logs[0].write(
           log.Message.environment.replace('{0}', log.Error.environment));
         vscode.window.showWarningMessage(
@@ -108,10 +103,20 @@ export class ProjectEngine {
         this._environment = process.env;
       } else {
         log.Log.logs[0].write(
-          log.Message.environment.replace('{0}', `VS version ${this._environment['VisualStudioVersion']}`));
+          log.Message.environment.replace('{0}', compilerEnv[1]));
+        this._environment = compilerEnv[0];
       }
     }
-    this._configureCompilerEnv();
+    if (!process.platform.match(/^win/i)) {
+      if (this._environment['LD_LIBRARY_PATH'] === undefined)
+        this._environment['LD_LIBRARY_PATH'] = __dirname;
+      else
+        this._environment['LD_LIBRARY_PATH'] += `:${__dirname}`;
+      log.Log.logs[0].write(
+        log.Message.environment.replace('{0}',
+         `{"LD_LIBRARY_PATH": "${this._environment['LD_LIBRARY_PATH']}"}`));
+    }
+    this._configureCompilerUserEnv();
   }
 
   /**
@@ -122,7 +127,7 @@ export class ProjectEngine {
     this._configureEnvironment();
     this._context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(e => {
       if (e.affectsConfiguration(`${log.Extension.id}.compilation`))
-        this._configureCompilerEnv();
+        this._configureCompilerUserEnv();
       else if (e.affectsConfiguration(`${log.Extension.id}.advanced.environment`))
         this._configureEnvironment();
     }));

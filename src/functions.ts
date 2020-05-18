@@ -73,16 +73,69 @@ export function decodeLocation(uri: vscode.Uri):
   ];
 }
 
+export function establishLinuxEnvironment(onerror: (err: any) => any, compiler: string = undefined): [any, string] {
+  if (process.platform.match(/^win/i)) {
+    onerror(new Error(log.Error.osIncompatible.replace('{0}', 'linux')));
+    return undefined;
+  }
+  let stdout: string;
+  let tryCompiler = compiler ? compiler : 'clang';
+  try {
+    stdout = child_process.execSync(`echo "" | ${tryCompiler} -E -v - 2>&1`, {encoding: 'utf8', env: process.env});
+  }
+  catch(err) {
+    onerror(err);
+  }
+  if (!compiler && !stdout) {
+    try {
+      tryCompiler = 'gcc';
+      stdout = child_process.execSync(`echo "" | ${tryCompiler} -E -v - 2>&1`, {encoding: 'utf8', env: process.env});
+    }
+    catch(err) {
+      onerror(err);
+    }
+  }
+  if (stdout) {
+      let search = false;
+      let includePath = stdout.split(/\r?\n/).reduce((prev, curr) => {
+        if (curr === "#include <...> search starts here:")
+          search = true;
+        else if (curr === "End of search list.")
+          search = false;
+        else if (search)
+          prev += `:${curr.trim()}`;
+        return prev;
+      }, "");
+    let env = process.env;
+    if (env['C_INCLUDE_PATH'] === undefined)
+      env['C_INCLUDE_PATH'] = includePath.substring(1);
+    else
+      env['C_INCLUDE_PATH'] = includePath;
+    if (env['CPLUS_INCLUDE_PATH'] === undefined)
+      env['CPLUS_INCLUDE_PATH'] = includePath.substring(1);
+    else
+      env['CPLUS_INCLUDE_PATH'] = includePath;
+    if (!compiler) {
+      try {
+        tryCompiler = child_process.execSync(`which ${tryCompiler}`, {encoding: 'utf8', env: process.env});
+      }
+      catch {}
+    }
+    return [env, tryCompiler];
+  }
+  return [undefined, undefined];
+}
+
 /**
  * This returns environment key-value pairs which is necessary to compile
  * sources on Win32 platform. On error this returners 'undefined'.
  *
  * This tries to find MS Visual Studio C\C++ compiler with the highest version.
  */
-export function establishVSEnvironment(onerror: (err: any) => any): any {
+export function establishVSEnvironment(onerror: (err: any) => any): [any, string] {
   if (!process.platform.match(/^win/i)) {
     onerror(new Error(log.Error.osIncompatible.replace('{0}', 'win32')));
-    return undefined;
+    return [undefined, undefined];
   }
   let extractVar = (prev, curr) => {
     let pair = curr.split(/=/);
@@ -103,7 +156,7 @@ export function establishVSEnvironment(onerror: (err: any) => any): any {
             if (fs.existsSync(vsdevcmd)) {
               let stdout = child_process.execSync(`"${vsdevcmd}" && set`, {encoding: 'utf8'});
               let env = stdout.split(/\r?\n/).reduce(extractVar, {});
-              return env;
+              return [env, `VS version ${env['VisualStudioVersion']}`];
             }
           }
         }
@@ -131,13 +184,13 @@ export function establishVSEnvironment(onerror: (err: any) => any): any {
         continue;
       let stdout = child_process.execSync(`"${vsvars}" && set`, {encoding: 'utf8'});
       let env = stdout.split(/\r?\n/).reduce(extractVar, {});
-      return env;
+      return [env, `VS version ${env['VisualStudioVersion']}`];
     }
     catch(err) {
       onerror(err);
     }
   }
-  return undefined;
+  return [undefined, undefined];
 }
 
 /**
