@@ -42,6 +42,11 @@
             "description": "Specifies a list of directories to look for header files while C++ language is processed.",
             "type": "array"
           },
+          "tsar-advisor.advanced.environment.enabled" :{
+            "description": "Use default environment variables while project is processed. This option is useful if compiler unable to find builtin header files. Under Windows it enables search for Microsoft Visual Studio and under Linux it enables search for available Clang or GCC compilers.",
+            "type": "boolean",
+            "default": false
+          },
           "tsar-advisor.advanced.log.enabled" : {
             "description": "Enable logging. Attention, the size of the log file is not limited. The data will be written to the log file while disk space is available.",
             "type": "boolean",

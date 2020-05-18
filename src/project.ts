@@ -56,7 +56,7 @@ export class ProjectEngine {
   /**
    * Update compilation environment according to the user configuration.
    */
-  private _configureUnixEnv() {
+  private _configureCompilerEnv() {
     let userConfig = vscode.workspace.getConfiguration(log.Extension.id);
     if (userConfig.has("compilation.cIncludePath")) {
       let list: [] = userConfig.get('compilation.cIncludePath');
@@ -79,13 +79,11 @@ export class ProjectEngine {
         + '}'));
   }
 
-  /**
-   * Create engine is a specified extension context.
-   */
-  constructor(context: vscode.ExtensionContext) {
-    this._context = context;
+  private _configureEnvironment() {
+    let userConfig = vscode.workspace.getConfiguration(log.Extension.id);
     if (!process.platform.match(/^win/i)) {
-      this._environment = process.env;
+      if (userConfig.get('advanced.environment.enabled') === true)
+        this._environment = process.env;
       if (this._environment['LD_LIBRARY_PATH'] === undefined)
         this._environment['LD_LIBRARY_PATH'] = __dirname;
       else
@@ -93,31 +91,41 @@ export class ProjectEngine {
       log.Log.logs[0].write(
         log.Message.environment.replace('{0}',
          `{"LD_LIBRARY_PATH": "${this._environment['LD_LIBRARY_PATH']}"}`));
-      this._configureUnixEnv();
-      this._context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(e => {
-        if (e.affectsConfiguration(`${log.Extension.id}.compilation`))
-          this._configureUnixEnv();
-      }));
-      return;
-    }
-    this._environment = establishVSEnvironment((err) => {
-      if (err instanceof Error)
+    } else if (userConfig.get('advanced.environment.enabled') === true) {
+      this._environment = establishVSEnvironment((err) => {
+        if (err instanceof Error)
+          log.Log.logs[0].write(
+            log.Message.environment.replace('{0}', err.message));
+        else
+          log.Log.logs[0].write(
+            log.Message.environment.replace('{0}', err));
+      });
+      if (this._environment === undefined) {
         log.Log.logs[0].write(
-          log.Message.environment.replace('{0}', err.message));
-      else
+          log.Message.environment.replace('{0}', log.Error.environment));
+        vscode.window.showWarningMessage(
+          `${log.Extension.displayName}: ${log.Error.environment}`);
+        this._environment = process.env;
+      } else {
         log.Log.logs[0].write(
-          log.Message.environment.replace('{0}', err));
-    });
-    if (this._environment === undefined) {
-      log.Log.logs[0].write(
-        log.Message.environment.replace('{0}', log.Error.environment));
-      vscode.window.showWarningMessage(
-        `${log.Extension.displayName}: ${log.Error.environment}`);
-      this._environment = process.env;
-    } else {
-      log.Log.logs[0].write(
-        log.Message.environment.replace('{0}', `VS version ${this._environment['VisualStudioVersion']}`));
+          log.Message.environment.replace('{0}', `VS version ${this._environment['VisualStudioVersion']}`));
+      }
     }
+    this._configureCompilerEnv();
+  }
+
+  /**
+   * Create engine is a specified extension context.
+   */
+  constructor(context: vscode.ExtensionContext) {
+    this._context = context;
+    this._configureEnvironment();
+    this._context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(e => {
+      if (e.affectsConfiguration(`${log.Extension.id}.compilation`))
+        this._configureCompilerEnv();
+      else if (e.affectsConfiguration(`${log.Extension.id}.advanced.environment`))
+        this._configureEnvironment();
+    }));
   }
 
   /**

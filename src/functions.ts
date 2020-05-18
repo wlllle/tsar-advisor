@@ -84,6 +84,35 @@ export function establishVSEnvironment(onerror: (err: any) => any): any {
     onerror(new Error(log.Error.osIncompatible.replace('{0}', 'win32')));
     return undefined;
   }
+  let extractVar = (prev, curr) => {
+    let pair = curr.split(/=/);
+    if (pair.length == 2)
+      prev[pair[0]] = pair[1];
+    return prev;
+  };
+  let programFiles = process.env['ProgramFiles(x86)']
+  if (programFiles) {
+      let vswhere = path.resolve(programFiles, 'Microsoft Visual Studio', 'Installer', 'vswhere.exe');
+      try {
+        if (fs.existsSync(vswhere)) {
+          let options = '-latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath';
+          let installDir = child_process.execSync(`"${vswhere}" ${options}`, {encoding: 'utf8'});
+          installDir = installDir.trim();
+          if (installDir) {
+            let vsdevcmd = path.resolve(installDir, 'Common7', 'Tools', 'VsDevCmd.bat');
+            if (fs.existsSync(vsdevcmd)) {
+              let stdout = child_process.execSync(`"${vsdevcmd}" && set`, {encoding: 'utf8'});
+              let env = stdout.split(/\r?\n/).reduce(extractVar, {});
+              return env;
+            }
+          }
+        }
+      }
+      catch(err) {
+        onerror(err);
+      }
+  }
+  // Lookup for versions less than 15 (2017).
   let versions = [];
   for (let variable in process.env) {
     let match = variable.match(/^VS\d+COMNTOOLS$/i);
@@ -101,12 +130,7 @@ export function establishVSEnvironment(onerror: (err: any) => any): any {
       if (stat.isDirectory())
         continue;
       let stdout = child_process.execSync(`"${vsvars}" && set`, {encoding: 'utf8'});
-      let env = stdout.split(/\r?\n/).reduce((prev, curr) => {
-        let pair = curr.split(/=/);
-        if (pair.length == 2)
-          prev[pair[0]] = pair[1];
-        return prev;
-      }, {});
+      let env = stdout.split(/\r?\n/).reduce(extractVar, {});
       return env;
     }
     catch(err) {
