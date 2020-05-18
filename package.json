@@ -106,6 +106,10 @@
       {
         "command": "tsar.parallel.dvmh",
         "title": "TSAR Parallelization with DVMH"
+      },
+      {
+        "command": "tsar.parallel.dvmhsm",
+        "title": "TSAR Shared Memory Parallelization with DVMH"
       }
     ],
     "menus": {
@@ -117,6 +121,16 @@
         },
         {
           "command": "tsar.parallel.dvmh",
+          "when": "editorLangId == 'c'",
+          "group": "1_tsar"
+        },
+        {
+          "command": "tsar.parallel.dvmhsm",
+          "when": "editorLangId == 'cpp'",
+          "group": "1_tsar"
+        },
+        {
+          "command": "tsar.parallel.dvmhsm",
           "when": "editorLangId == 'c'",
           "group": "1_tsar"
         },
@@ -199,6 +213,16 @@
         },
         {
           "command": "tsar.parallel.dvmh",
+          "when": "resourceLangId == 'c'",
+          "group": "1_tsar"
+        },
+        {
+          "command": "tsar.parallel.dvmhsm",
+          "when": "resourceLangId == 'cpp'",
+          "group": "1_tsar"
+        },
+        {
+          "command": "tsar.parallel.dvmhsm",
           "when": "resourceLangId == 'c'",
           "group": "1_tsar"
         },

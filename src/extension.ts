@@ -113,13 +113,18 @@ export function activate(context: vscode.ExtensionContext) {
     },
     {
       command: 'tsar.parallel.openmp',
-      title: 'Parallelization with OpenMP',
+      title: 'TSAR Parallelization with OpenMP',
       run: '-clang-openmp-parallel'
     },
     {
       command: 'tsar.parallel.dvmh',
       title: 'TSAR Parallelization with DVMH',
       run: '-clang-experimental-apc-dvmh'
+    },
+    {
+      command: 'tsar.parallel.dvmhsm',
+      title: 'TSAR Shared Memory Parallelization with DVMH',
+      run: '-clang-dvmh-sm-parallel'
     },
     {
       command: 'tsar.analysis.check',
