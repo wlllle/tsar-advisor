@@ -48,7 +48,7 @@
             "default": false
           },
           "tsar-advisor.advanced.environment.linuxCCompiler" : {
-            "description": "Path to C-compatible language compiler which should be used to establish environment undef Linux. This option make sense if the Environment:Enabled option is on. If no path is specified 'clang' and 'gcc' will be tried subsequently.",
+            "markdownDescription": "Path to C-compatible language compiler which should be used to establish environment undef Linux. This option make sense if the `#tsar-advisor.advanced.environment.enabled#` is on. If no path is specified 'clang' and 'gcc' will be tried subsequently.",
             "type": "string",
             "default": ""
           },
