@@ -40,6 +40,16 @@ export default
             target: '-fignore-redundant-memory'
         },
         {
+            label: 'Assume No External Calls',
+            description: 'Assume that functions are never called outside the analyzed module',
+            target: '-fno-external-calls'
+        },
+        {
+            label: 'Disable Math Errno',
+            description: 'Prevent math functions to indicate errors by setting errno',
+            target: '-fno-math-errno'
+        },
+        {
             label: 'Ignore Library Functions',
             description: 'Do not perform analysis of library functions',
             target: '-fno-analyze-library-functions',
