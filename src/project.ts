@@ -17,6 +17,8 @@ import {establishVSEnvironment, establishLinuxEnvironment} from './functions';
 import {ProjectProvider} from './general';
 import * as log from './log';
 import * as msg from './messages';
+import {createInterface, Interface} from 'readline';
+import * as which from 'which';
 
 type ToolT = {server:string};
 
@@ -319,25 +321,51 @@ export class ProjectEngine {
    */
   private _startServer(uri: vscode.Uri, prjDir: string,
       tool: ToolT, env: any, resolve: any, reject: any) {
-    const pipe = this._pipe(uri);
-    // {execArgv: []} disables --debug options otherwise the server.js tries to
-    // use the same port as a main process for debugging and will not be run
-    // in debug mode
-    let options = {execArgv: [], env: env};
-    const server = child_process.fork(tool.server, [pipe], options);
+    let pipe: string;
+    let server: child_process.ChildProcess;
+    if (!process.platform.match(/^win/i)) {
+      let userConfig = vscode.workspace.getConfiguration(log.Extension.id);
+      let pathToServer = which.sync(userConfig.get('advanced.analysisServer'), {nothrow: true});
+      if (!pathToServer) {
+        reject(new Error(log.Error.serverNotFound.replace('{0}', 'tsar-server')));
+        return;
+      }
+      let args = userConfig.get('advanced.log.enabled') !== true ? [] :
+        [ path.join(prjDir, log.Project.session.replace('{0}', `${Date.now()}`)) ];
+      log.Log.logs[0].write(log.Message.serverFound.replace('{0}', pathToServer));
+      server = child_process.spawn(pathToServer, args, { env: env, windowsHide: true });
+    } else {
+      // {execArgv: []} disables --debug options otherwise the server.js tries to
+      // use the same port as a main process for debugging and will not be run
+      // in debug mode
+      pipe = this._pipe(uri);
+      let options = {execArgv: [], env: env};
+      server = child_process.fork(tool.server, [pipe], options);
+    }
     server.on('error', (err) => {this._internalError(err)});
     server.on('close', () => {this._stop(uri);});
     server.on('exit', (code, signal) => {
       log.Log.logs[0].write(log.Message.stopServer.replace('{0}', signal))});
-    // do not move project inside 'message' event listener it must be shared
-    // between all messages evaluation
+    // do not move project inside 'data/message' event listener
+    // it must be shared between all messages evaluation
     let project: Project;
-    server.on('message', (data: string) => {
+    let onServerData = (raw: string) => {
       let client: net.Socket;
       try {
-        if (data === log.Server.listening) {
+        let data = JSON.parse(raw);
+        if (data['Status'] === log.Server.start) {
+          if (!('TSARVersion' in data))
+            throw new Error(log.Error.serverVersion);
+          log.Log.logs[0].write(
+            log.Message.serverVersion.replace('{0}', data['TSARVersion']));
+        } else if (data['Status'] === log.Server.listening) {
           log.Log.logs[0].write(log.Message.listening);
-          client = net.connect(pipe, () => {client.setEncoding('utf8')});
+          let addr:any = pipe !== undefined ? pipe :
+            {
+              port: data['ServerPort'],
+              host: data['ServerAddress'],
+            };
+          client = net.connect(addr, () => {client.setEncoding('utf8')});
           project = new Project(uri, prjDir, tool, client, server);
           this._context.subscriptions.push(project);
           for (let scheme in this._providers) {
@@ -352,21 +380,26 @@ export class ProjectEngine {
             log.Log.logs[0].write(log.Message.server.replace('{0}', data));
           });
           client.on('data', this._onResponse.bind(this, project, client));
-        } else if (data === log.Server.connection) {
-          log.Log.logs[0].write(log.Message.connection);
+        } else if (data['Status'] === log.Server.connection) {
+          log.Log.logs[0].write(log.Message.connection
+            .replace('{0}', `${data['ClientAddress']}:${data['ClientPort']}`)
+            .replace('{1}', `${data['ServerAddress']}:${data['ServerPort']}`));
           log.Log.logs[0].write(
             log.Message.active.replace('{0}', project.uri.toString()));
           resolve(project);
-        } else {
-          let match = data.match(/^\s*(\w*)\s*{\s*(.*)\s*}\s*$/);
-          if (!match)
-            throw new Error(data);
-          else if (match[1] === log.Server.data)
-            log.Log.logs[0].write(log.Message.client.replace('{0}', match[2]));
-          else if (match[1] === log.Server.error)
-            throw new Error(match[2]);
+        } else if (data['Status'] === log.Server.error) {
+          if (data['Message'])
+            throw new Error(data['Message']);
           else
-            throw new Error(data);
+            throw new Error(log.Error.internal);
+        } else if (data['Status'] === log.Server.close ||
+                   data['Status'] === log.Server.send ||
+                   data['Status'] === log.Server.receive) {
+          log.Log.logs[0].write(log.Message.serverState
+            .replace('{0}', data['Status'])
+            .replace('{1}', data['Message']));
+        } else {
+          throw new Error(log.Error.internal);
         }
       }
       catch(err) {
@@ -376,7 +409,22 @@ export class ProjectEngine {
         if (client)
           client.destroy();
       }
-    });
+    };
+    if (!process.platform.match(/^win/i)) {
+      createInterface({
+        input     : server.stdout,
+        terminal  : false,
+      })
+      .on('line', onServerData)
+      .on('close', () => {
+        // If server redirect stdout, this readline interface will be cloesd.
+        // Usually TSAR shared library redirects IO to files specified by the client.
+        // In this case all output messages will be stored in a corresponding file.
+        log.Log.logs[0].write(log.Message.serverIORedirected);
+      });
+    } else {
+      server.on('message', onServerData);
+    }
   }
 
   /**
@@ -625,8 +673,11 @@ export class Project {
    * Send request to a server.
    */
   send(request: any) {
-    if (!this._client.write(JSON.stringify(request) + log.Project.delimiter))
-      this._client.once('drain', () => {this.send(request)});
+    let requestString = JSON.stringify(request) + log.Project.delimiter;
+    log.Log.logs[0].write(log.Message.client.replace('{0}', requestString));
+    this._client.write(requestString);
+    /*if (!this._client.write(requestString))
+      this._client.once('drain', () => {this.send(request)});*/
   }
 
   /**

@@ -40,9 +40,12 @@ export class Project {
   static error = 'error.log';
   static output = 'output.log';
   static input = 'input.log';
+  static session = 'session.{0}.log'
 }
 
 export class Error {
+  static serverNotFound = 'cannot find analysis server {0}';
+  static serverVersion = 'enable to determine server version'
   static general = 'some errors have been occurred';
   static alreadyActive = 'analysis session is already activated';
   static untitled = '{0} is untitled document, save it at first';
@@ -72,8 +75,12 @@ export class Message {
   static active = 'analysis session is activated for {0}';
   static close = 'analysis session is closed for {0}';
   static listening = 'server is listening for connection';
-  static connection = 'connection is successfully established';
+  static connection = 'connection is successfully established, client {0}, server {1}';
+  static serverFound = 'analysis server found {0}';
+  static serverVersion = 'version of the analysis server is {0}';
   static stopServer = 'server is stopped with {0} signal';
+  static serverState = 'server in state {0}: {1}';
+  static serverIORedirected = 'server IO has been redirected';
   static server = 'response from server {0}';
   static client = 'request from client {0}';
   static tryCompilerEnv = 'try to establish environment for compiler: {0}';
@@ -83,8 +90,12 @@ export class Message {
 }
 
 export class Server {
-  static listening = "listening";
-  static connection = "connection";
+  static start = "start";
+  static listening = "listen";
+  static connection = "accept";
+  static close = "close";
+  static send = "send";
+  static receive = "receive";
   static error = "error";
   static data = "data";
 }

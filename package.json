@@ -30,32 +30,37 @@
   ],
   "main": "./out/src/extension",
   "contributes": {
-    "configuration":[
+    "configuration": [
       {
         "title": "TSAR Advisor",
         "properties": {
-          "tsar-advisor.compilation.cIncludePath" : {
+          "tsar-advisor.compilation.cIncludePath": {
             "description": "Specifies a list of directories to look for header files while C language is processed.",
             "type": "array"
           },
-          "tsar-advisor.compilation.c++IncludePath" : {
+          "tsar-advisor.compilation.c++IncludePath": {
             "description": "Specifies a list of directories to look for header files while C++ language is processed.",
             "type": "array"
           },
-          "tsar-advisor.advanced.environment.enabled" : {
+          "tsar-advisor.advanced.environment.enabled": {
             "description": "Use default environment variables while a project is processed. This option is useful if compiler unable to find builtin header files. Under Windows it enables search for Microsoft Visual Studio and under Linux it enables search for available Clang or GCC compilers.",
             "type": "boolean",
             "default": false
           },
-          "tsar-advisor.advanced.environment.linuxCCompiler" : {
-            "markdownDescription": "Path to C-compatible language compiler which should be used to establish environment undef Linux. This option make sense if the `#tsar-advisor.advanced.environment.enabled#` is on. If no path is specified 'clang' and 'gcc' will be tried subsequently.",
+          "tsar-advisor.advanced.environment.linuxCCompiler": {
+            "markdownDescription": "Path to C-compatible language compiler which should be used to establish environment under Linux. This option make sense if the `#tsar-advisor.advanced.environment.enabled#` is on. If no path is specified 'clang' and 'gcc' will be tried subsequently.",
             "type": "string",
             "default": ""
           },
-          "tsar-advisor.advanced.log.enabled" : {
+          "tsar-advisor.advanced.log.enabled": {
             "description": "Enable logging. Attention, the size of the log file is not limited. The data will be written to the log file while disk space is available.",
             "type": "boolean",
             "default": false
+          },
+          "tsar-advisor.advanced.analysisServer" : {
+            "description": "Analysis server which is used to analyze a project. Set path to the analysis server executable if it is not available in the PATH environment variable.",
+            "type": "string",
+            "default": "tsar-server"
           }
         }
       }
@@ -327,6 +332,7 @@
   "dependencies": {
     "bootstrap": "~4.3.1",
     "jquery": "^3.4.1",
-    "vis-network": "~6.3.2"
+    "vis-network": "~6.3.2",
+    "which": "~2.0.2"
   }
 }
