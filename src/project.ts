@@ -243,7 +243,8 @@ export class ProjectEngine {
               placeHolder: option.description,
             });
             if (manualInput)
-              cl.Args.push(manualInput);
+              for (let manualOption of manualInput.split(/\s/))
+                cl.Args.push(manualOption.trim());
           } else {
             cl.Args.push(option.target);
           }
