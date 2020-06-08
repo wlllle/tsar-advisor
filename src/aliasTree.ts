@@ -115,7 +115,7 @@ export class AliasTreeProvider extends ProjectWebviewProvider {
     for (let m of memory) {
       let info = `${m.Address}, ${m.Size > 0 ? m.Size : '?'}B`;
       label += info + '\\n';
-      let id = m.Object ? m.Object.ID : 0;
+      let id = m.Object && m.Object.ID !== undefined ? m.Object.ID : 0;
       if (m.Locations && m.Locations.length > 0) {
         let ls = [];
         for (let loc of m.Locations)
