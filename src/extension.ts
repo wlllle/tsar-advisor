@@ -21,6 +21,7 @@ import {ProjectProvider} from './general';
 import {CalleeFuncProvider, CalleeFuncProviderState} from './calleeFunc';
 import * as t from './transformProvider';
 import server from './tools';
+import { FileListProvider } from './fileList';
 
 /**
  * Open log file (log.Extension.log), returns true on success.
@@ -66,6 +67,7 @@ export function activate(context: vscode.ExtensionContext) {
   log.Log.logs[0].write(log.Message.extension);
   let engine = new ProjectEngine(context);
   engine.register(
+    [FileListProvider.scheme, new FileListProvider],
     [ProjectProvider.scheme, new ProjectProvider],
     [CalleeFuncProvider.scheme, new CalleeFuncProvider],
     [lt.LoopTreeProvider.scheme, new lt.LoopTreeProvider],
@@ -85,6 +87,8 @@ export function activate(context: vscode.ExtensionContext) {
             state.onDidDisposeContent(() => {engine.stop(project)},
               null, context.subscriptions);
             await engine.runTool(project);
+            project.providerState(FileListProvider.scheme).active = true;
+            project.send(new msg.FileList);
             state.active = true;
             project.send(new msg.Statistic);
           },

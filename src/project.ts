@@ -29,6 +29,7 @@ export class ProjectEngine {
   private _projects = new Map<string, Project>();
   private _parser = new msg.Parser(
     msg.Diagnostic,
+    msg.FileList,
     msg.Statistic,
     msg.FunctionList,
     msg.LoopTree,

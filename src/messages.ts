@@ -214,10 +214,38 @@ export class Statistic {
 }
 
 export interface Location {
+  File: number;
   Line: number;
   Column: number;
+  MacroFile: number;
   MacroLine: number;
   MacroColumn: number;
+}
+
+export interface File {
+  ID: number;
+  Name: string;
+}
+
+export class FileList {
+  Files: File [] = [];
+
+  toJSON(): FileListJSON {
+    return Object.assign({name: FileList.name}, this);
+  }
+
+  static fromJSON(json: FileListJSON|string) : FunctionList {
+    if (typeof json === 'string') {
+      return JSON.parse(json, FileList.reviver);
+    } else {
+      let obj = Object.create(FileList.prototype);
+      return Object.assign(obj, json);
+    }
+  }
+
+  static reviver(key: string, value: any): any {
+    return key === '' ? FileList.fromJSON(value) : value;
+  }
 }
 
 export interface LoopTraits {
@@ -452,6 +480,10 @@ export interface StatisticJSON extends MessageJSON {
   Loops: {string:number};
   Variables: {string: number};
   Traits: TraitStatistic;
+}
+
+export interface FileListJSON extends MessageJSON {
+  Files: File [];
 }
 
 export interface FunctionListJSON extends MessageJSON {
