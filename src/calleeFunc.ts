@@ -10,7 +10,14 @@
 'use strict';
 
 import * as vscode from 'vscode';
-import {UpdateUriFunc, gotoExpansionLocLink, headHtml} from './functions';
+import * as path from 'path';
+import { UpdateUriFunc, headHtml } from './functions';
+import {
+  gotoExpansionLocLink,
+  resolveLocation,
+  FileListProviderState,
+  FileListProvider
+} from './fileList';
 import * as log from './log';
 import * as msg from './messages';
 import {Project} from './project';
@@ -165,6 +172,8 @@ export class CalleeFuncProvider extends ProjectWebviewProvider {
   protected _provideContent(project: Project, info: Data, asWebvwieUri: UpdateUriFunc): string {
     let state = project.providerState(
       CalleeFuncProvider.scheme) as CalleeFuncProviderState;
+    let filesState = project.providerState(FileListProvider.scheme) as
+      FileListProviderState;
     let panel = state.panel;
     // Implement Go To command. Note, that identifier for a function
     // must be a number represented as a string. The first symbol
@@ -176,14 +185,10 @@ export class CalleeFuncProvider extends ProjectWebviewProvider {
           if ((<string>message.func).startsWith('.', 0))
             break;
           let f = info.Functions.get(Number(message.func));
-          if (f.User)
-            vscode.commands.executeCommand('tsar.open-project',
-              project.uri.with({
-                query: JSON.stringify({
-                  Line: f.StartLocation.Line,
-                  Column: f.StartLocation.Column
-                })
-              }));
+          vscode.commands.executeCommand('tsar.open-project',
+            project.uri.with({
+              query: JSON.stringify(resolveLocation(project, f.StartLocation))
+            }));
           break;
       }
     }, null, state.disposables);
@@ -237,17 +242,15 @@ export class CalleeFuncProvider extends ProjectWebviewProvider {
              (!isFunction(caller) || caller.User)) {
           edges += `,location: [`;
           for (let loc of callee.StartLocation) {
+            let resolvedLoc = resolveLocation(project, loc);
             let goto = encodeURI('command:tsar.open-project?' +
               JSON.stringify(project.uri.with({
-                query: JSON.stringify({
-                  Line: loc.Line,
-                  Column: loc.Column
-                })
+                query: JSON.stringify(resolvedLoc)
               })));
             edges += `
               {
                 Goto: '${goto}',
-                Filename: '${project.prjname}',
+                Filename: '${path.basename(resolvedLoc.Path)}',
                 Line: ${loc.Line},
                 Column: ${loc.Column}
               },`;

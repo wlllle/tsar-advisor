@@ -233,37 +233,24 @@ export function projectLink(project: Project): string {
 /**
  * Return html representation of a link to a location in a source code.
  */
-export function gotoSpellingLocLink({ project, body, line, column }:
+export function gotoSpellingLocLink({ project, body, path, line, column }:
     {
       project: Project;
       body: string;
+      path: string;
       line: number;
       column: number;
     }):string {
   return commandLink({
     command: 'tsar.open-project', project,
-    title: log.Command.gotoCode, body,
-    query: JSON.stringify({Line: line, Column: column})
+    title: `${log.Command.gotoCode} in ${path}`,
+    body,
+    query: JSON.stringify({
+      Path: path,
+      Line: line,
+      Column: column
+    })
   });
-}
-
-/**
- * Return html representation of a link to expansion locations.
- * 
- * @returns Link `line:column` if location is not in macro or
- *          `line:column(macro-line:macro-column)`.
- */
-export function gotoExpansionLocLink(project: Project, Loc: msg.Location, ): string {
-  if ((Loc.Line == Loc.MacroLine) &&
-      (Loc.Column == Loc.MacroColumn)) {
-    let loc = `${Loc.Line}:${Loc.Column}`;
-    return `${gotoSpellingLocLink({ project, body: loc, line: Loc.Line, column: Loc.Column })}`;
-  }
-  let macroloc = `${Loc.MacroLine}:${Loc.MacroColumn}`;
-  let loc = `${Loc.Line}:${Loc.Column}`;
-  return `
-    ${gotoSpellingLocLink({ project, body: loc,line: Loc.Line, column: Loc.Column })}
-    (${gotoSpellingLocLink({ project, body: macroloc, line: Loc.MacroLine, column: Loc.MacroColumn })})`;
 }
 
 /**

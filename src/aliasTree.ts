@@ -2,8 +2,8 @@
 'use strict';
 
 import * as vscode from 'vscode';
-import {headHtml, UpdateUriFunc, commandLink,
-  gotoExpansionLocLink, DisposableLikeList} from './functions';
+import { headHtml, UpdateUriFunc, DisposableLikeList } from './functions';
+import { gotoExpansionLocLink } from './fileList';
 import * as log from './log';
 import * as msg from './messages';
 import {Project, ProjectEngine} from './project';

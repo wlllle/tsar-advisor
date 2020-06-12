@@ -17,6 +17,77 @@ import {
   ProjectContentProvider,
   ProjectContentProviderState,
 } from './project';
+import { gotoSpellingLocLink } from './functions';
+import * as path from 'path';
+
+/**
+ * Return html representation of a link to expansion locations.
+ *
+ * @returns Link `filename:line:column` if location is not in macro or
+ *          `filename:line:column(macro-filename:macro-line:macro-column)`.
+ */
+export function gotoExpansionLocLink(project: Project, loc: msg.Location) :
+    string {
+  let state = project.providerState(FileListProvider.scheme) as
+    FileListProviderState;
+  let fullPath = path.resolve(state.getFile(loc.File).Name);
+  let body = `${path.basename(fullPath)}:${loc.Line}:${loc.Column}`;
+  if ((loc.Line == loc.MacroLine) &&
+      (loc.Column == loc.MacroColumn)) {
+    return `${gotoSpellingLocLink({
+      project,
+      body: body,
+      path: state.getFile(loc.File).Name,
+      line: loc.Line,
+      column: loc.Column
+    })}`;
+  }
+  let macroFullPath = path.resolve(state.getFile(loc.MacroFile).Name);
+  let macroBody = `${path.basename(macroFullPath)}:${loc.MacroLine}:${loc.MacroColumn}`;
+  return `
+    ${gotoSpellingLocLink({
+      project,
+      body: body,
+      path: state.getFile(loc.File).Name,
+      line: loc.Line,
+      column: loc.Column
+    })}
+    (${gotoSpellingLocLink({
+      project,
+      body: macroBody,
+      path: state.getFile(loc.MacroFile).Name,
+      line: loc.MacroLine,
+      column: loc.MacroColumn
+    })})`;
+}
+
+/**
+ * Determine path to file in a specified location.
+ */
+export function resolveLocation(
+    project: Project, loc: msg.Location, useMacro = false):
+    {
+      Path: string,
+      Line: number,
+      Column: number
+    } {
+  let state = project.providerState(FileListProvider.scheme) as
+    FileListProviderState;
+  if (!useMacro) {
+    let fullPath = path.resolve(state.getFile(loc.File).Name);
+    return {
+      Path: fullPath,
+      Line: loc.Line,
+      Column: loc.Column
+    }
+  }
+  let fullPath = path.resolve(state.getFile(loc.MacroFile).Name);
+  return {
+    Path: fullPath,
+    Line: loc.MacroLine,
+    Column: loc.MacroColumn
+  }
+}
 
 export class FileListProviderState implements ProjectContentProviderState {
   private _provider: FileListProvider;

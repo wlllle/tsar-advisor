@@ -139,28 +139,32 @@ export function activate(context: vscode.ExtensionContext) {
   let stop = vscode.commands.registerCommand(
     'tsar.stop', (uri:vscode.Uri) => engine.stop(uri));
   let openProject = vscode.commands.registerCommand('tsar.open-project',
-    (uri:vscode.Uri) => {
-      vscode.workspace.openTextDocument(uri).then(
+    (uri: vscode.Uri) => {
+      let [docUri, query] = [uri, undefined];
+      if (uri.query != '') {
+        query = JSON.parse(uri.query);
+        docUri = vscode.Uri.file(query['Path']);
+      }
+      vscode.workspace.openTextDocument(docUri).then(
         (success) => {
           vscode.window.showTextDocument(success).then(
             (doc) => {
-              if (uri.query != '') {
-                let query = JSON.parse(uri.query);
-                if ('Line' in query) {
-                  let line = query.Line;
-                  let col = query.Column;
-                  doc.selection = new vscode.Selection(line - 1, col - 1, line - 1, col - 1);
-                  doc.revealRange(new vscode.Range(line - 1, col - 1, line - 1, col - 1));
-                }
+              if (query && 'Line' in query) {
+                let line = query.Line;
+                let col = query.Column;
+                doc.selection =
+                  new vscode.Selection(line - 1, col - 1, line - 1, col - 1);
+                doc.revealRange(
+                  new vscode.Range(line - 1, col - 1, line - 1, col - 1));
               }
             }
-          );
+          )
         },
-        (reason) => {
+        () => {
           vscode.window.showErrorMessage(
             `${log.Extension.displayName}: ${log.Error.openFile.replace('{0}', uri.fsPath)}`);
-        });
-    })
+        })
+    });
   lt.registerCommands(engine, context.subscriptions);
   at.registerCommands(engine, context.subscriptions);
   let showCalleeFunc = vscode.commands.registerCommand('tsar.callee.func',
