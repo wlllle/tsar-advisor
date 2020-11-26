@@ -45,7 +45,7 @@ export class Project {
 
 export class Error {
   static serverNotFound = 'cannot find analysis server {0}';
-  static serverVersion = 'enable to determine server version'
+  static serverVersion = 'unable to determine server version'
   static general = 'some errors have been occurred';
   static alreadyActive = 'analysis session is already activated';
   static untitled = '{0} is untitled document, save it at first';
