@@ -323,27 +323,19 @@ export class ProjectEngine {
    */
   private _startServer(uri: vscode.Uri, prjDir: string,
       tool: ToolT, env: any, resolve: any, reject: any) {
-    let pipe: string;
     let server: child_process.ChildProcess;
-    if (!process.platform.match(/^win/i)) {
-      let userConfig = vscode.workspace.getConfiguration(log.Extension.id);
-      let pathToServer = which.sync(userConfig.get('advanced.analysisServer'), {nothrow: true});
-      if (!pathToServer) {
-        reject(new Error(log.Error.serverNotFound.replace('{0}', 'tsar-server')));
-        return;
-      }
-      let args = userConfig.get('advanced.log.enabled') !== true ? [] :
-        [ path.join(prjDir, log.Project.session.replace('{0}', `${Date.now()}`)) ];
-      log.Log.logs[0].write(log.Message.serverFound.replace('{0}', pathToServer));
-      server = child_process.spawn(pathToServer, args, { env: env, windowsHide: true });
-    } else {
-      // {execArgv: []} disables --debug options otherwise the server.js tries to
-      // use the same port as a main process for debugging and will not be run
-      // in debug mode
-      pipe = this._pipe(uri);
-      let options = {execArgv: [], env: env};
-      server = child_process.fork(tool.server, [pipe], options);
+    let userConfig = vscode.workspace.getConfiguration(log.Extension.id);
+    let pathToServer = which.sync(
+      userConfig.get('advanced.analysisServer'), { nothrow: true });
+    if (!pathToServer) {
+      reject(new Error(log.Error.serverNotFound.replace('{0}', 'tsar-server')));
+      return;
     }
+    let args = userConfig.get('advanced.log.enabled') !== true ? [] :
+      [ path.join(prjDir, log.Project.session.replace('{0}', `${Date.now()}`)) ];
+    log.Log.logs[0].write(log.Message.serverFound.replace('{0}', pathToServer));
+    server = child_process.spawn(pathToServer, args,
+      { env: env, cwd: path.dirname(uri.fsPath), windowsHide: true });
     server.on('error', (err) => {this._internalError(err)});
     server.on('close', () => {this._stop(uri);});
     server.on('exit', (code, signal) => {
@@ -362,11 +354,10 @@ export class ProjectEngine {
             log.Message.serverVersion.replace('{0}', data['TSARVersion']));
         } else if (data['Status'] === log.Server.listening) {
           log.Log.logs[0].write(log.Message.listening);
-          let addr:any = pipe !== undefined ? pipe :
-            {
-              port: data['ServerPort'],
-              host: data['ServerAddress'],
-            };
+          let addr: any = {
+            port: data['ServerPort'],
+            host: data['ServerAddress'],
+          };
           client = net.connect(addr, () => {client.setEncoding('utf8')});
           project = new Project(uri, prjDir, tool, client, server);
           this._context.subscriptions.push(project);
@@ -412,34 +403,17 @@ export class ProjectEngine {
           client.destroy();
       }
     };
-    if (!process.platform.match(/^win/i)) {
-      createInterface({
-        input     : server.stdout,
-        terminal  : false,
-      })
-      .on('line', onServerData)
-      .on('close', () => {
-        // If server redirect stdout, this readline interface will be cloesd.
-        // Usually TSAR shared library redirects IO to files specified by the client.
-        // In this case all output messages will be stored in a corresponding file.
-        log.Log.logs[0].write(log.Message.serverIORedirected);
-      });
-    } else {
-      server.on('message', onServerData);
-    }
-  }
-
-  /**
-   * Return pipe to exchange messages between client (GUI) and server (TSAR).
-   * TODO (kaniandr@gmail.com): For Linux OS pipe is a file, so check that it
-   * does not exist.
-   */
-  private _pipe(uri: vscode.Uri): string {
-    if (!process.platform.match(/^win/i)) {
-      return `${uri.path}.${log.Project.pipe}`;
-    } else {
-      return path.join('\\\\?\\pipe', uri.path, log.Project.pipe);
-    }
+    createInterface({
+      input     : server.stdout,
+      terminal  : false,
+    })
+    .on('line', onServerData)
+    .on('close', () => {
+      // If server redirect stdout, this readline interface will be cloesd.
+      // Usually TSAR shared library redirects IO to files specified by the client.
+      // In this case all output messages will be stored in a corresponding file.
+      log.Log.logs[0].write(log.Message.serverIORedirected);
+    });
   }
 
   /**
@@ -677,7 +651,7 @@ export class Project {
   send(request: any) {
     let requestString = JSON.stringify(request) + log.Project.delimiter;
     log.Log.logs[0].write(log.Message.client.replace('{0}', requestString));
-    this._client.write(requestString);
+    this._client.write(requestString)
     /*if (!this._client.write(requestString))
       this._client.once('drain', () => {this.send(request)});*/
   }
