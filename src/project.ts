@@ -331,7 +331,12 @@ export class ProjectEngine {
       reject(new Error(log.Error.serverNotFound.replace('{0}', 'tsar-server')));
       return;
     }
-    let args = userConfig.get('advanced.log.enabled') !== true ? [] :
+    // TSAR Server uses signal processing to flush session log on termination.
+    // However, kill() on Windows does not emulate signals, it terminates
+    // application in unknown way instead. So, we always disable session logging
+    // on Windows OS.
+    let args = userConfig.get('advanced.log.enabled') !== true ||
+               process.platform.match(/^win/i) ? [] :
       [ path.join(prjDir, log.Project.session.replace('{0}', `${Date.now()}`)) ];
     log.Log.logs[0].write(log.Message.serverFound.replace('{0}', pathToServer));
     server = child_process.spawn(pathToServer, args,
