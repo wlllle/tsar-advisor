@@ -522,6 +522,11 @@ export interface ProjectContentProvider {
   update(project: Project): any;
 
   /**
+   * Clear visible content for a specified project.
+   */
+  clear(project: Project): any;
+
+  /**
    *  Dispose provider.
    */
   dispose(): any;
@@ -605,6 +610,8 @@ export class Project {
 
   public arguments: msg.Arguments;
 
+  public focus: ProjectContentProviderState;
+
   /**
    * Create a project with a specified uri.
    *
@@ -637,6 +644,7 @@ export class Project {
   dispose() {
     if (this._isDisposed)
       return;
+    this._providers.forEach(state => {state.provider.clear(this)});
     this._isDisposed = true;
     this._providers.clear();
     this._output.hide();

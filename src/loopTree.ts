@@ -25,6 +25,7 @@ export function registerCommands(engine: ProjectEngine, subscriptions: Disposabl
       let project = engine.project(uri);
       let state = project.providerState(LoopTreeProvider.scheme);
       state.active = true;
+      project.focus = state;
       let request = new msg.FunctionList;
       if (!state.actual(request))
         project.send(request);
@@ -34,6 +35,7 @@ export function registerCommands(engine: ProjectEngine, subscriptions: Disposabl
       let project = engine.project(uri);
       let state = project.providerState(LoopTreeProvider.scheme);
       state.active = true;
+      project.focus = state;
       let looptree = new msg.LoopTree;
       let query = JSON.parse(uri.query);
       looptree.FunctionID = query.ID;
@@ -118,6 +120,9 @@ export class LoopTreeProvider extends ProjectWebviewProvider {
 
   public state(): LoopTreeProviderState {
     return new LoopTreeProviderState(this);
+  }
+
+  clear(project: Project) {
   }
 
   protected _title(): string { return log.FunctionList.title; }

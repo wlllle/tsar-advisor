@@ -16,6 +16,7 @@ export function registerCommands(engine: ProjectEngine, subscriptions: Disposabl
       let project = engine.project(uri);
       let state = project.providerState(AliasTreeProvider.scheme);
       state.active = true;
+      project.focus = state;
       let request = new msg.AliasTree;
       let query = JSON.parse(uri.query);
       request.FuncID = query.FuncID;

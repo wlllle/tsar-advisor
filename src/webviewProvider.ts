@@ -81,7 +81,10 @@ export class ProjectWebviewProviderState<ProviderT extends ProjectWebviewProvide
       this._panel = vscode.window.createWebviewPanel(
         this._provider.scheme(),
         log.Extension.displayName,
-        columnToShowIn,
+        {
+          viewColumn: columnToShowIn,
+          preserveFocus: true,
+        },
         {
           enableCommandUris: true,
           enableScripts: true,
@@ -89,6 +92,7 @@ export class ProjectWebviewProviderState<ProviderT extends ProjectWebviewProvide
         }
       );
       this._panel.onDidDispose(() => {
+        this.active = false;
         this._hasPanel = false;
         this._onDidDisposeContent.fire();
       }, null, this.disposables);
@@ -106,12 +110,14 @@ export class ProjectWebviewProviderState<ProviderT extends ProjectWebviewProvide
 }
 
 export abstract class ProjectWebviewProvider implements ProjectContentProvider{
-  protected readonly _disposables: vscode.Disposable[];
+  protected readonly _disposables: vscode.Disposable[] = [];
 
   protected _onDidAriseInternalError = new vscode.EventEmitter<Error>();
   readonly onDidAriseInternalError = this._onDidAriseInternalError.event;
 
   dispose() { this._disposables.forEach(d => d.dispose()); }
+  clear(project: Project) {}
+
 
   /**
    * Return a new description of a project content provider state.
@@ -133,7 +139,8 @@ export abstract class ProjectWebviewProvider implements ProjectContentProvider{
       let panel = state.panel;
       panel.title = `${log.Extension.displayName} | ${project.prjname}`;
       panel.webview.html = data;
-      panel.reveal();
+      if (project.focus == state)
+        panel.reveal();
     }, data => {
       this._onDidAriseInternalError.fire(new Error(data));
       vscode.window.showErrorMessage(log.Extension.displayName +

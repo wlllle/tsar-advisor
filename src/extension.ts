@@ -83,14 +83,10 @@ export function activate(context: vscode.ExtensionContext) {
          })
         .then(
           async project => {
-            let state = project.providerState(ProjectProvider.scheme);
-            state.onDidDisposeContent(() => {engine.stop(project)},
-              null, context.subscriptions);
             await engine.runTool(project);
             project.providerState(FileListProvider.scheme).active = true;
             project.send(new msg.FileList);
-            state.active = true;
-            project.send(new msg.Statistic);
+            vscode.commands.executeCommand('tsar.function.list', project.uri);
           },
           reason => { onReject(reason, uri) })
     });
@@ -180,6 +176,7 @@ export function activate(context: vscode.ExtensionContext) {
       // Dispose current webview if required request is new.
       state.active = false;
       state.active = true;
+      project.focus = state;
       project.send(request);
     });
   context.subscriptions.push(start, stop, openProject, showCalleeFunc);

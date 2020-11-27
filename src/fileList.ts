@@ -170,6 +170,7 @@ export class FileListProvider implements ProjectContentProvider {
             });
         });
   }
+  clear(project: Project): any {}
   dispose() {
     this._disposables.forEach(d => d.dispose());
     this._disposables.length = 0;

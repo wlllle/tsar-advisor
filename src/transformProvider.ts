@@ -51,6 +51,7 @@ export function registerCommands(
                 });
               }).then((value) => {vscode.commands.executeCommand('tsar.stop', project.uri)});
               state.active = true;
+              project.focus = state;
               await engine.runTool(project, info.run)
               project.send('');
             },
@@ -96,6 +97,7 @@ export class TransformationProvider implements ProjectContentProvider {
   readonly onDidAriseInternalError = this._onDidAriseInternalError.event;
 
   state(): TransformationProviderState { return new TransformationProviderState(this) };
+  clear() {}
 
   update(project: Project) {
     let state = project.providerState(
