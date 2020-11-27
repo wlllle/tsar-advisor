@@ -648,7 +648,7 @@ export class Project {
     this._isDisposed = true;
     this._providers.clear();
     this._output.hide();
-    this._client.end();
+    this._client.destroy();
     this._server.kill();
     this._disposable.dispose();
   }
