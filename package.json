@@ -288,7 +288,7 @@
         },
         {
           "command": "tsar.transform.propagate",
-          "when": "resourceLangId' == 'cpp'",
+          "when": "resourceLangId == 'cpp'",
           "group": "1_tsar"
         },
         {
