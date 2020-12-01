@@ -20,6 +20,10 @@ import * as msg from './messages';
 
 export type DisposableLikeList = { dispose(): any }[];
 
+export function isFunction(obj: msg.Function|msg.Loop): obj is msg.Function {
+    return (obj as msg.Function).Loops !== undefined;
+}
+
 /**
  * Implement simple processing of errors: show message and write to log.
  *

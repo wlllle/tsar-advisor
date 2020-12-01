@@ -11,7 +11,7 @@
 
 import * as vscode from 'vscode';
 import {headHtml, UpdateUriFunc, commandLink,
-  DisposableLikeList} from './functions';
+  DisposableLikeList, isFunction} from './functions';
 import { gotoExpansionLocLink } from './fileList';
 import * as log from './log';
 import * as msg from './messages';
@@ -55,7 +55,14 @@ interface Data {
   Info: Map<msg.Function|msg.Loop,Info>;
 };
 
-class LoopTreeProviderState extends ProjectWebviewProviderState<LoopTreeProvider> {
+export class LoopTreeProviderState extends ProjectWebviewProviderState<LoopTreeProvider> {
+
+  public functions() {
+    return (this.data !== undefined)
+      ? (this.data as Data).FunctionList.Functions
+      : undefined;
+  }
+
   actual(request: any): boolean {
     if (request instanceof msg.FunctionList)
       return this.data !== undefined;
@@ -109,9 +116,6 @@ class LoopTreeProviderState extends ProjectWebviewProviderState<LoopTreeProvider
   }
 }
 
-function isFunction(obj: msg.Function|msg.Loop): obj is msg.Function {
-    return (obj as msg.Function).Loops !== undefined;
-}
 
 export class LoopTreeProvider extends ProjectWebviewProvider {
   static scheme = "tsar-looptree";

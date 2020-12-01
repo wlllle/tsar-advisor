@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg version="1.1" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" xmlns:cc="http://creativecommons.org/ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:osb="http://www.openswatchbook.org/uri/2009/osb" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:xlink="http://www.w3.org/1999/xlink">
+ <defs>
+  <radialGradient id="radialGradient2857" cx="26.03" cy="29.972" r="23.04" gradientTransform="matrix(.58712 0 0 .66264 .38644 -3.8738)" gradientUnits="userSpaceOnUse">
+   <stop offset="0"/>
+   <stop stop-opacity="0" offset="1"/>
+  </radialGradient>
+ </defs>
+ <metadata>
+  <rdf:RDF>
+   <cc:Work rdf:about="">
+    <dc:format>image/svg+xml</dc:format>
+    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+    <dc:title/>
+   </cc:Work>
+  </rdf:RDF>
+ </metadata>
+ <g stroke="#d7dae0" stroke-width=".93732">
+  <path d="m18 31s-37.272-8.0539 0-16.07c37.272-8.0157-16.439-13.927-16.439-13.927" fill="none"/>
+  <path d="m18 31s-31.715-9.8809 0-20.355c31.715-10.474-15.852-9.6418-15.852-9.6418" fill="url(#radialGradient2857)"/>
+ </g>
+</svg>

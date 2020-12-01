@@ -76,6 +76,29 @@
         "path": "./snippets.json"
       }
     ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "tsar-explorer",
+          "title": "TSAR Explorer",
+          "icon": "./icons/logo.svg"
+        }
+      ]
+    },
+    "views": {
+      "tsar-explorer": [
+        {
+          "id": "tsar.loopTree",
+          "name": "Loop Tree"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "tsar.loopTree",
+        "contents": "Please, choose project to analyze."
+      }
+    ],
     "commands": [
       {
         "command": "tsar.start",
@@ -83,7 +106,8 @@
       },
       {
         "command": "tsar.stop",
-        "title": "TSAR Close session"
+        "title": "TSAR Close session",
+        "icon": "icons/close.svg"
       },
       {
         "command": "tsar.analysis.check",
@@ -120,9 +144,94 @@
       {
         "command": "tsar.parallel.dvmhsm",
         "title": "TSAR Shared Memory Parallelization with DVMH"
+      },
+      {
+        "command": "tsar.loopTree.goto",
+        "title": "Go to Source Code"
+      },
+      {
+        "command": "tsar.func.analyze",
+        "title": "Analyze Function",
+        "icon": "icons/analyze.svg"
+      },
+      {
+        "command": "tsar.alias.tree",
+        "title": "Build Alias Tree",
+        "icon": "icons/alias-tree.svg"
+      },
+      {
+        "command": "tsar.call.graph",
+        "title": "Build Call Graph",
+        "icon": "icons/call-graph.svg"
+      },
+      {
+        "command": "tsar.call.graph.io",
+        "title": "View I/O Operations",
+        "icon": "icons/call-graph.svg"
+      },
+      {
+        "command": "tsar.call.graph.exit",
+        "title": "View Possible Exits",
+        "icon": "icons/call-graph.svg"
+      },
+      {
+        "command": "tsar.call.graph.unsafe",
+        "title": "View Unsafe Control Flow",
+        "icon": "icons/call-graph.svg"
       }
     ],
     "menus": {
+      "view/item/context": [
+        {
+          "command": "tsar.call.graph.io",
+          "when": "view == tsar.loopTree && viewItem == function"
+        },
+        {
+          "command": "tsar.call.graph.exit",
+          "when": "view == tsar.loopTree && viewItem == function"
+        },
+        {
+          "command": "tsar.call.graph.unsafe",
+          "when": "view == tsar.loopTree && viewItem == function"
+        },
+        {
+          "command": "tsar.call.graph.io",
+          "when": "view == tsar.loopTree && viewItem == loop"
+        },
+        {
+          "command": "tsar.call.graph.exit",
+          "when": "view == tsar.loopTree && viewItem == loop"
+        },
+        {
+          "command": "tsar.call.graph.unsafe",
+          "when": "view == tsar.loopTree && viewItem == loop"
+        },
+        {
+          "command": "tsar.stop",
+          "when": "view == tsar.loopTree && viewItem == project",
+          "group": "inline"
+        },
+        {
+          "command": "tsar.func.analyze",
+          "when": "view == tsar.loopTree && viewItem == function",
+          "group": "inline"
+        },
+        {
+          "command": "tsar.alias.tree",
+          "when": "view == tsar.loopTree && viewItem == loop",
+          "group": "inline"
+        },
+        {
+          "command": "tsar.call.graph",
+          "when": "view == tsar.loopTree && viewItem == function",
+          "group": "inline"
+        },
+        {
+          "command": "tsar.call.graph",
+          "when": "view == tsar.loopTree && viewItem == loop",
+          "group": "inline"
+        }
+      ],
       "editor/context": [
         {
           "command": "tsar.parallel.dvmh",
@@ -339,7 +448,7 @@
     "watch": "npm-run-all -c -n -p watch-ts watch-css"
   },
   "devDependencies": {
-    "typescript": "^3.7.2",
+    "typescript": "^3.8",
     "@types/vscode": "^1.40.0",
     "@types/node": "^12.8.1",
     "catw": "~1.0.1",

@@ -30,6 +30,7 @@ export class Extension {
   static visNetwork = path.resolve(__dirname, '..', '..', 'node_modules', 'vis-network', 'dist');
   static bootstrap = path.resolve(__dirname, '..', '..', 'node_modules', 'bootstrap', 'dist');
   static jquery = path.resolve(__dirname, '..', '..', 'node_modules', 'jquery', 'dist');
+  static icons = path.resolve(__dirname, '..', '..', 'icons');
   static log = path.resolve(__dirname, '..', '..', 'log', 'tsar.log');
 }
 
@@ -41,6 +42,7 @@ export class Project {
   static output = 'output.log';
   static input = 'input.log';
   static session = 'session.{0}.log'
+  static tooltip = 'Name of the project';
 }
 
 export class Error {

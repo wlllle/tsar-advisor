@@ -22,6 +22,7 @@ import {CalleeFuncProvider, CalleeFuncProviderState} from './calleeFunc';
 import * as t from './transformProvider';
 import server from './tools';
 import { FileListProvider } from './fileList';
+import { LoopTreeViewProvider } from './loopExplorer';
 
 /**
  * Open log file (log.Extension.log), returns true on success.
@@ -71,6 +72,7 @@ export function activate(context: vscode.ExtensionContext) {
     [ProjectProvider.scheme, new ProjectProvider],
     [CalleeFuncProvider.scheme, new CalleeFuncProvider],
     [lt.LoopTreeProvider.scheme, new lt.LoopTreeProvider],
+    [LoopTreeViewProvider.scheme, new LoopTreeViewProvider],
     [t.TransformationProvider.scheme, new t.TransformationProvider],
     [at.AliasTreeProvider.scheme, new at.AliasTreeProvider]
   );

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg version="1.1" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" xmlns:cc="http://creativecommons.org/ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+ <metadata>
+  <rdf:RDF>
+   <cc:Work rdf:about="">
+    <dc:format>image/svg+xml</dc:format>
+    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+    <dc:title/>
+   </cc:Work>
+  </rdf:RDF>
+ </metadata>
+ <g fill="none" stroke="#288a49" stroke-linecap="round" stroke-linejoin="round" stroke-width="4.6251" style="paint-order:markers stroke fill">
+  <path d="m8.4515 19.286 14.334-9.1689v16.593l-14.334-0.64722z" points="22.785955,10.116809 22.785955,26.709402 8.4515027,26.062185 8.4515027,19.285714 " style="paint-order:markers stroke fill"/>
+  <path d="m5.7714 18.692v7.4118l2.6801-0.04189v-6.7765z" points="5.7714287,26.104072 8.4515027,26.062185 8.4515027,19.285714 5.7714287,18.692308 " style="paint-order:markers stroke fill"/>
+  <path d="m5.7714 26.104 13.229 0.89593 3.786-0.2906-14.334-0.64722z" points="19,27 22.785955,26.709402 8.4515027,26.062185 5.7714287,26.104072 " style="paint-order:markers stroke fill"/>
+  <path d="m5.7714 18.692 13.229-12.692 3.786 4.1168-14.334 9.1689z" points="19,6.0000001 22.785955,10.116809 8.4515027,19.285714 5.7714287,18.692308 " style="paint-order:markers stroke fill"/>
+  <path d="m19 6v21l3.786-0.2906v-16.593z" points="19,27 22.785955,26.709402 22.785955,10.116809 19,6.0000001 " style="paint-order:markers stroke fill"/>
+  <path d="m5.7714 18.692 13.229-12.692v21l-13.229-0.89593z" points="19,6.0000001 19,27 5.7714287,26.104072 5.7714287,18.692308 " style="paint-order:markers stroke fill"/>
+ </g>
+</svg>
