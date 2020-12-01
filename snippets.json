@@ -1,22 +1,27 @@
 {
-  "TSAR Inline Function Call": {
+  "SAPFOR Inline Function Call": {
     "prefix": "#pragma spf transform inline",
     "body": [ "#pragma spf transform inline${TM_SELECTED_TEXT/([\\s\\S]+)/\n{\n$1\n}/}" ],
-    "description": "Use TSAR to inline function call"
+    "description": "Inline function call"
   },
-  "TSAR Propagate Expression": {
+  "SAPFOR Propagate Expression": {
   "prefix": "#pragma spf transform propagate",
     "body": [ "#pragma spf transform propagate${TM_SELECTED_TEXT/([\\s\\S]+)/\n{\n$1\n}/}" ],
-    "description": "Use TSAR to propagate expressions"
+    "description": "Propagate specified expressions or propagate expressions in a whole scope."
   },
-  "TSAR Rename Local": {
+  "SAPFOR Rename Local": {
     "prefix": "#pragma spf transform rename",
     "body": [ "#pragma spf transform rename${TM_SELECTED_TEXT/([\\s\\S]+)/\n{\n$1\n}/}" ],
-    "description": "Use TSAR to rename local variables in a specified scope. Each variable will have unique name in the scope"
+    "description": "Rename local variables in a scope. Each variable will have unique name in the scope."
   },
-  "TSAR Check": {
-    "prefix": "#pragma spf transform check",
-    "body": [ "#pragma spf check ${1|nomacro|} ${TM_SELECTED_TEXT/([\\s\\S]+)/\n{\n$1\n}/}" ],
-      "description": "Use TSAR to check user-defined properties, for example, absence of macro in a specified scope."
+  "SAPFOR Replace Structure": {
+    "prefix": "#pragma spf transform replace",
+    "body": [ "#pragma spf transform replace${1/^[a-z|A-Z].*$/($0)/}${2/[a-z|A-Z]/ with($0)/}${3: nostrict}" ],
+    "description": "Replace arguments of a structure type with references to members:\n\nFrom:\n  struct STy { int X };\n  void foo(struct STy *S) {\n    S->X = 5;\n    #pragma spf transform replace(S)\n  }\nTo:\n  void foo(int *S_X0) {\n    *S_X0 = 5\n  }\n"
+  },
+  "SAPFOR Assert": {
+    "prefix": "#pragma spf assert",
+    "body": [ "#pragma spf assert ${1|nomacro|} ${TM_SELECTED_TEXT/([\\s\\S]+)/\n{\n$1\n}/}" ],
+    "description": "Check specified properties in a scope."
   }
 }
