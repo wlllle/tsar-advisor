@@ -23,6 +23,7 @@
     "onCommand:tsar.analysis.check",
     "onCommand:tsar.transform.propagate",
     "onCommand:tsar.transform.inline",
+    "onCommand:tsar.transform.replace",
     "onCommand:tsar.transform.dedecls",
     "onCommand:tsar.transform.rename",
     "onCommand:tsar.parallel.openmp",
@@ -95,6 +96,10 @@
       {
         "command": "tsar.transform.inline",
         "title": "TSAR Function Inlining"
+      },
+      {
+        "command": "tsar.transform.replace",
+        "title": "TSAR Structure Replacement"
       },
       {
         "command": "tsar.transform.rename",
@@ -190,6 +195,16 @@
           "group": "1_tsar"
         },
         {
+          "command": "tsar.transform.replace",
+          "when": "editorLangId == 'cpp'",
+          "group": "1_tsar"
+        },
+        {
+          "command": "tsar.transform.replace",
+          "when": "editorLangId == 'c'",
+          "group": "1_tsar"
+        },
+        {
           "command": "tsar.analysis.check",
           "when": "editorLangId == 'cpp'",
           "group": "1_tsar"
@@ -278,6 +293,16 @@
         },
         {
           "command": "tsar.transform.propagate",
+          "when": "resourceLangId == 'c'",
+          "group": "1_tsar"
+        },
+        {
+          "command": "tsar.transform.replace",
+          "when": "resourceLangId == 'cpp'",
+          "group": "1_tsar"
+        },
+        {
+          "command": "tsar.transform.replace",
           "when": "resourceLangId == 'c'",
           "group": "1_tsar"
         },

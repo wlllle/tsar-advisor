@@ -102,6 +102,11 @@ export function activate(context: vscode.ExtensionContext) {
       run: '-clang-inline'
     },
     {
+      command: 'tsar.transform.replace',
+      title: 'TSAR Structure Replacement',
+      run: '-clang-struct-replacement'
+    },
+    {
       command: 'tsar.transform.rename',
       title: 'TSAR Local Renaming',
       run: '-clang-rename'
