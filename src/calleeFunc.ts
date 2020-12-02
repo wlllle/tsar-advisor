@@ -205,6 +205,7 @@ export class CalleeFuncProvider extends ProjectWebviewProvider {
     let nodes = '';
     let edges = '';
     let edgeNumber = 0; // use to set id of a new edge
+    let numberOfCallees = 0, numberOfCalls = 0;
     let stmtNodes = []; // nodes for statements like goto, break, etc.
     info.CallGraph.forEach((callees, caller) => {
        let callerID = `${caller.ID}`;
@@ -217,6 +218,7 @@ export class CalleeFuncProvider extends ProjectWebviewProvider {
          }
          nodes += ',color: "darkorange"';
        } else {
+        ++numberOfCallees;
         let f = caller as msg.Function;
         nodes += `{id: '${callerID}', label: '${f.Name}'`;
         if (!f.User)
@@ -238,26 +240,31 @@ export class CalleeFuncProvider extends ProjectWebviewProvider {
          }
          edges += `{id: ${edgeNumber}, from: '${callerID}', to: '${calleeID}'`;
          // Add property to Go To a corresponding statement in a source code from webview.
-         if (callee.StartLocation.length > 0 &&
-             (!isFunction(caller) || caller.User)) {
-          edges += `,location: [`;
-          for (let loc of callee.StartLocation) {
-            let resolvedLoc = resolveLocation(project, loc);
-            let goto = encodeURI('command:tsar.open-project?' +
-              JSON.stringify(project.uri.with({
-                query: JSON.stringify(resolvedLoc)
-              })));
-            edges += `
-              {
-                Goto: '${goto}',
-                Filename: '${path.basename(resolvedLoc.Path)}',
-                Line: ${loc.Line},
-                Column: ${loc.Column}
-              },`;
-           }
-          // Remove last comma.
-          edges = edges.substr(0, edges.length - 1);
-          edges += ']';
+         if (!isFunction(caller) || caller.User) {
+          if (callee.StartLocation.length > 0) {
+            edges += `,location: [`;
+            for (let loc of callee.StartLocation) {
+              if (numberOfCalls >= 0)
+                ++numberOfCalls;
+              let resolvedLoc = resolveLocation(project, loc);
+              let goto = encodeURI('command:tsar.open-project?' +
+                JSON.stringify(project.uri.with({
+                  query: JSON.stringify(resolvedLoc)
+                })));
+              edges += `
+                {
+                  Goto: '${goto}',
+                  Filename: '${path.basename(resolvedLoc.Path)}',
+                  Line: ${loc.Line},
+                  Column: ${loc.Column}
+                },`;
+            }
+            // Remove last comma.
+            edges = edges.substr(0, edges.length - 1);
+            edges += ']';
+          } else {
+            numberOfCalls = -1;
+          }
         }
         edges += '},';
        }
@@ -294,6 +301,9 @@ export class CalleeFuncProvider extends ProjectWebviewProvider {
           <div class="container-fluid pt-4" style="height:100%">
             <h3>${this._title().replace('{0}', gotoTarget)}</h3>
             <h5>${subtitle}</h5>
+            <p>A total number of callees is ${numberOfCallees}.</p>
+            <p>A total number of calls from user-defined functions is
+               ${numberOfCalls < 0 ? 'unknown' : numberOfCalls}.</p>
             <div class="row" style="height:100%">
               <div class="col-9" style="height:100%">
                 <div id="callGraph" style="height:90%"}></div>

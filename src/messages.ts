@@ -171,6 +171,8 @@ export interface TraitStatistic {
 export class Statistic {
   Files: {string:number};
   Functions: number;
+  UserFunctions: number;
+  ParallelLoops: number;
   Loops: [number, number];
   Variables: [number, number];
   Traits: TraitStatistic;
@@ -477,6 +479,8 @@ export interface DiagnosticJSON extends MessageJSON {
  */
 export interface StatisticJSON extends MessageJSON {
   Functions: number;
+  UserFunctions: number;
+  ParallelLoops: number;
   Loops: {string:number};
   Variables: {string: number};
   Traits: TraitStatistic;

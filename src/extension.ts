@@ -16,7 +16,7 @@ import * as lt from './loopTree';
 import * as at from './aliasTree';
 import * as msg from './messages';
 import {onReject} from './functions';
-import {ProjectEngine } from './project';
+import {ProjectEngine, Project } from './project';
 import {ProjectProvider} from './general';
 import {CalleeFuncProvider, CalleeFuncProviderState} from './calleeFunc';
 import * as t from './transformProvider';
@@ -141,6 +141,18 @@ export function activate(context: vscode.ExtensionContext) {
   ],engine, context.subscriptions);
   let stop = vscode.commands.registerCommand(
     'tsar.stop', (uri:vscode.Uri) => engine.stop(uri));
+  let statistic = vscode.commands.registerCommand(
+    'tsar.statistic', (data: vscode.Uri|Project) => {
+      let project = (data as Project).prjname !== undefined
+        ? data as Project
+        : engine.project(data as vscode.Uri);
+      let state = project.providerState(ProjectProvider.scheme);
+      let request = new msg.Statistic;
+      state.active = true;
+      project.focus = state;
+      project.send(request);
+    }
+  );
   let openProject = vscode.commands.registerCommand('tsar.open-project',
     (uri: vscode.Uri) => {
       let [docUri, query] = [uri, undefined];
@@ -186,5 +198,5 @@ export function activate(context: vscode.ExtensionContext) {
       project.focus = state;
       project.send(request);
     });
-  context.subscriptions.push(start, stop, openProject, showCalleeFunc);
+  context.subscriptions.push(start, stop, statistic, openProject, showCalleeFunc);
 }

@@ -110,6 +110,11 @@
         "icon": "icons/close.svg"
       },
       {
+        "command": "tsar.statistic",
+        "title": "Show project statistic",
+        "icon": "icons/analyze.svg"
+      },
+      {
         "command": "tsar.analysis.check",
         "title": "TSAR Check User-defined Properties"
       },
@@ -208,6 +213,11 @@
         },
         {
           "command": "tsar.stop",
+          "when": "view == tsar.loopTree && viewItem == project",
+          "group": "inline"
+        },
+        {
+          "command": "tsar.statistic",
           "when": "view == tsar.loopTree && viewItem == project",
           "group": "inline"
         },

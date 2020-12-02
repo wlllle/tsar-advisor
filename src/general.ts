@@ -54,20 +54,23 @@ export class ProjectProvider extends ProjectWebviewProvider {
           <h3> ${this._title().replace('{0}', projectLink(project))} </h3>
           ${this._listOfFiles(stat.Files)}
           <p>
-            Analyzed files comprise ${numberHtml(stat.Functions)}
+            Analyzed files comprise
+            ${numberHtml(stat.UserFunctions)}
             ${commandLink(
               {
                 command: 'tsar.function.list',
                 project,
                 title: log.FunctionList.title.replace('{0}',path.basename(project.prjname)),
-                body: stat.Functions !== 1 ? 'functions' : 'function',
+                body: stat.Functions !== 1 ? 'user functions' : 'user function',
                 query: ''
               }
             )}
+            (${numberHtml(stat.Functions)} ${stat.Functions !== 1 ? 'functions' : 'function'} in total)
             with
             ${numberHtml(varCount)} ${varCount !== 1 ? 'variables' : 'variable'}${htmlVarNotAnalyzed}
             and
-              ${numberHtml(loopCount)} ${loopCount !== 1 ? 'loops' : 'loop'}${htmlLpNotAnalyzed}.
+              ${numberHtml(loopCount)} ${loopCount !== 1 ? 'loops' : 'loop'}${htmlLpNotAnalyzed}
+            including ${numberHtml(stat.ParallelLoops)} ${stat.ParallelLoops !== 1 ? 'loops' : 'loop'} without parallelization issues.
           </p>
           ${this._listOfTraits(stat)}
           <p>
