@@ -45,7 +45,7 @@ export function registerCommands(
                 return new Promise(resolve => {
                   state.onDidChangeActiveState(isActive => {
                     if (!isActive) {
-                      resolve();
+                      Promise.resolve();
                     }
                   });
                 });

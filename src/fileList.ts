@@ -135,7 +135,7 @@ export class FileListProviderState implements ProjectContentProviderState {
       this._fileList = new Map<number, msg.File>();
       for (let f of response.Files)
         this._fileList.set(f.ID, f);
-      return resolve();
+      return Promise.resolve();
     })
   }
 }
