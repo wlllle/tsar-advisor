@@ -5,6 +5,11 @@
   "version": "0.0.4",
   "publisher": "DVM",
   "homepage": "http://dvm-system.org",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dvm-system/tsar-advisor"
+  },
+  "icon": "images/logo.png",
   "keywords": [
     "parallel programming",
     "program analysis",
