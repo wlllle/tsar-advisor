@@ -209,16 +209,28 @@ export function commandLink({ command, project, title, body, query }:
       body: string;
       query: any;
     }): string {
+  return `
+    <a class="source-link"
+       href="${commandRef({ command: command, project: project, query: query })}"
+       title="${title}">
+      ${body}</a>`;
+}
+
+/**
+ * Return uri which invokes a specified command.
+ * @param query String or JSON representation of command arguments.
+ */
+export function commandRef({ command, project, query }:
+    {
+      command: string;
+      project: Project;
+      query: any;
+    }): string {
   let uri = project.uri.with({
     scheme: "tsar",
     query: typeof query === 'string' ? query : JSON.stringify(query)
   });
-  return `
-    <a class="source-link"
-       href="${encodeURI(
-         `command:${command}?${encodeURIComponent(JSON.stringify(uri))}`)}"
-       title="${title}">
-      ${body}</a>`;
+  return encodeURI(`command:${command}?${encodeURIComponent(JSON.stringify(uri))}`);
 }
 
 /**
