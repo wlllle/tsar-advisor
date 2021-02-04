@@ -210,6 +210,7 @@ export function commandLink({ command, project, title, body, query }:
       query: any;
     }): string {
   let uri = project.uri.with({
+    scheme: "tsar",
     query: typeof query === 'string' ? query : JSON.stringify(query)
   });
   return `

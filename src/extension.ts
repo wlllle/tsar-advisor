@@ -159,6 +159,8 @@ export function activate(context: vscode.ExtensionContext) {
       if (uri.query != '') {
         query = JSON.parse(uri.query);
         docUri = vscode.Uri.file(query['Path']);
+      } else {
+        docUri = vscode.Uri.file(uri.path);
       }
       vscode.workspace.openTextDocument(docUri).then(
         (success) => {

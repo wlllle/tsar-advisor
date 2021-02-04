@@ -44,7 +44,7 @@ export class ProjectEngine {
    * Build internal identifier for a specified project uri.
    */
   private static _projectID(uri: vscode.Uri): string {
-    return uri.with({query: null}).toString();
+    return vscode.Uri.file(uri.path).toString();
   }
 
   /**
