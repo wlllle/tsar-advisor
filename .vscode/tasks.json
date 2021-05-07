@@ -23,16 +23,6 @@
         "kind": "build",
         "isDefault": true
       }
-    },
-    {
-      "type": "npm",
-      "script": "addon",
-      "problemMatcher": "$tsc-watch",
-      "isBackground": true,
-      "presentation": {
-        "reveal": "always"
-      },
-      "group": "build",
     }
   ]
 }
