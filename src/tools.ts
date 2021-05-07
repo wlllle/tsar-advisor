@@ -13,7 +13,6 @@ export default
   tools: [
     {
       name: "tsar",
-      server: path.join(__dirname, 'server.js'),
       options: [
         {
             label: 'Use External Analysis',

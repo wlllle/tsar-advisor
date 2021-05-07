@@ -20,7 +20,7 @@ import * as msg from './messages';
 import {createInterface, Interface} from 'readline';
 import * as which from 'which';
 
-type ToolT = {server:string};
+type ToolT = {};
 
 /**
  * This controls all currently active projects evaluated by the extension.
@@ -626,7 +626,7 @@ export class Project {
    * @param client Socket to interconnect with TSAR analyzer.
    * @param server A standalone process where TSAR analyzer is running.
    */
-  constructor(projectUri: vscode.Uri, projectDir: string, tool: {server:string},
+  constructor(projectUri: vscode.Uri, projectDir: string, tool: {},
       client: net.Socket, server: child_process.ChildProcess) {
     this._prjUri = projectUri;
     this._prjDir = projectDir;
