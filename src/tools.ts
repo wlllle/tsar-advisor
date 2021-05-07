@@ -36,7 +36,35 @@ export default
         {
             label: 'Ignore Redundant Memory',
             description: 'Try to discard influence of redundant memory on the analysis results',
-            target: '-fignore-redundant-memory'
+            target: '-fignore-redundant-memory=',
+            canPickMany: false,
+            options: [
+                {
+                    label: 'Analyze All Memory Locations',
+                    description: 'Always analyze redundant memory (default)',
+                    target: 'disable',
+                },
+                {
+                    label: 'Preserve Analysis Results',
+                    description: 'Analyze redundant memory before source-to-source program transformation',
+                    target: 'strict'
+                },
+                {
+                    label: 'Restirct Memory Bounds',
+                    description: 'Source-to-source transform passes ignore unused tails of redundant memory locations',
+                    target: 'bounded',
+                },
+                {
+                    label: 'Ignore Unsed Memory Subranges',
+                    description: 'Source-to-source transform passes ignore unused parts of redundant memory locations',
+                    target: 'parital'
+                },
+                {
+                    label: 'Ignore Entire Memory Location',
+                    description: 'Source-to-source transform passes ignore the whole  redundant memory locations',
+                    target: 'weak'
+                }
+            ]
         },
         {
             label: 'Assume No External Calls',

@@ -235,7 +235,7 @@ export class ProjectEngine {
         for (let option of user_options) {
           if (option.selectFile) {
             let selectedFile = await vscode.window.showOpenDialog(
-              Object.assign({canSelectMany: false}, option.selectFile));
+              Object.assign({ canSelectMany: false }, option.selectFile));
             if (selectedFile && selectedFile.length > 0)
               cl.Args.push(`${option.target}${selectedFile[0].fsPath}`);
           } else if (option.manualInput) {
@@ -246,6 +246,23 @@ export class ProjectEngine {
             if (manualInput)
               for (let manualOption of manualInput.split(/\s/))
                 cl.Args.push(manualOption.trim());
+          } else if (option.options) {
+            let nested_options = await vscode.window.showQuickPick(
+              option.options as any[],
+              {
+                canPickMany: option.canPickMany as boolean,
+                ignoreFocusOut: true,
+                placeHolder: log.Message.selectOptions
+              });
+            if (nested_options) {
+              let value = option.target;
+              if (option.canPickMany)
+                for (let nest of nested_options)
+                  value += nest.target;
+              else
+                value += nested_options.target;
+              cl.Args.push(value);
+            }
           } else {
             cl.Args.push(option.target);
           }
