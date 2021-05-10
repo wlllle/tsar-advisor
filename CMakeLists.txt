@@ -12,8 +12,6 @@ set(TSAR_ADVISOR_SOURCES html/style.css src/aliasTree.ts src/calleeFunc.ts
 
 set(TSAR_ADVISOR_PACKAGE tsar-advisor-${TSAR_ADVISOR_VERSION}.vsix)
 
-message(${TSAR_ADVISOR_PACKAGE})
-
 add_custom_command(OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/${TSAR_ADVISOR_PACKAGE}
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
   COMMAND npm install
