@@ -21,5 +21,10 @@ add_custom_command(OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/${TSAR_ADVISOR_PACKAGE}
 add_custom_target(tsar-advisor ALL COMMENT "Built TSAR Advisor"
   DEPENDS ${TSAR_ADVISOR_PACKAGE})
 
-install(CODE "message(\"-- Installing extension ${TSAR_ADVISOR_PACKAGE}\")\n
-  execute_process(COMMAND code --install-extension ${CMAKE_CURRENT_SOURCE_DIR}/${TSAR_ADVISOR_PACKAGE})")
+set(COMMAND_PREFIX "")
+if(WIN32)
+   set(COMMAND_PREFIX "cmd.exe /c")
+endif()
+
+install(CODE "message(\"-- Installing extension ${TSAR_ADVISOR_PACKAGE}\")
+  execute_process(COMMAND ${COMMAND_PREFIX} code --install-extension ${CMAKE_CURRENT_SOURCE_DIR}/${TSAR_ADVISOR_PACKAGE})")
