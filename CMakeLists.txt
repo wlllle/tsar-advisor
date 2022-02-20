@@ -12,18 +12,22 @@ set(TSAR_ADVISOR_SOURCES html/style.css src/aliasTree.ts src/calleeFunc.ts
 
 set(TSAR_ADVISOR_PACKAGE tsar-advisor-${TSAR_ADVISOR_VERSION}.vsix)
 
+set(COMMAND_PREFIX "")
+if(WIN32)
+  set(COMMAND_PREFIX "call")
+endif()
+
 add_custom_command(OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/${TSAR_ADVISOR_PACKAGE}
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-  COMMAND call npm install
+  COMMAND ${COMMAND_PREFIX} npm install
   COMMAND vsce package
   DEPENDS ${TSAR_ADVISOR_SOURCES})
 
 add_custom_target(tsar-advisor ALL COMMENT "Built TSAR Advisor"
   DEPENDS ${TSAR_ADVISOR_PACKAGE})
 
-set(COMMAND_PREFIX "")
 if(WIN32)
-   set(COMMAND_PREFIX "cmd.exe /c")
+  set(COMMAND_PREFIX "cmd.exe /c")
 endif()
 
 install(CODE "message(\"-- Installing extension ${TSAR_ADVISOR_PACKAGE}\")
