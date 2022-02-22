@@ -32,7 +32,8 @@
     "onCommand:tsar.transform.dedecls",
     "onCommand:tsar.transform.rename",
     "onCommand:tsar.parallel.openmp",
-    "onCommand:tsar.parallel.dvmh"
+    "onCommand:tsar.parallel.dvmh",
+    "onCommand:tsar.parallel.dvmhsm"
   ],
   "main": "./out/src/extension",
   "contributes": {
