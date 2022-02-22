@@ -92,7 +92,7 @@ export function resolveLocation(
 export class FileListProviderState implements ProjectContentProviderState {
   private _provider: FileListProvider;
   private _isActive = false;
-  private _fileList: Map<number, msg.File>;
+  private _fileList: Map<string, msg.File>;
 
   readonly disposables: vscode.Disposable[] = [];
 
@@ -118,8 +118,10 @@ export class FileListProviderState implements ProjectContentProviderState {
     return false;
   }
 
-  getFile(ID: number) : msg.File { return this._fileList.get(ID) }
-  hasFile(ID: number) : boolean { return this._fileList.has(ID) }
+  getFile(ID: msg.FileID): msg.File {
+    return this._fileList.get(ID.toString());
+  }
+  hasFile(ID: msg.FileID) : boolean { return this._fileList.has(ID.toString()) }
 
   dispose(): any {
     this.disposables.forEach(d => d.dispose());
@@ -132,9 +134,9 @@ export class FileListProviderState implements ProjectContentProviderState {
       this._onDidDisposeContent.fire();
     }
     return new Promise(resolve => {
-      this._fileList = new Map<number, msg.File>();
+      this._fileList = new Map<string, msg.File>();
       for (let f of response.Files)
-        this._fileList.set(f.ID, f);
+        this._fileList.set(f.ID.toString(), f);
       return Promise.resolve();
     })
   }

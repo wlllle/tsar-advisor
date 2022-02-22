@@ -215,17 +215,19 @@ export class Statistic {
   }
 }
 
+export type FileID = [number, number];
+
 export interface Location {
-  File: number;
+  File: FileID;
   Line: number;
   Column: number;
-  MacroFile: number;
+  MacroFile: FileID;
   MacroLine: number;
   MacroColumn: number;
 }
 
 export interface File {
-  ID: number;
+  ID: FileID;
   Name: string;
 }
 

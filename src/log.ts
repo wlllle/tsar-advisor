@@ -24,7 +24,7 @@ export class Extension {
   static id = 'tsar-advisor';
   static displayName = 'TSAR Advisor';
   static url = 'http://dvm-system.org';
-  static langauges = {'c' : 'C', 'cpp' : 'C++'};
+  static langauges = {'c' : 'C', 'cpp' : 'C++', 'llvm' : 'LLVM'};
   static style = path.resolve(__dirname, 'style.css');
   static logo = path.resolve(__dirname, 'images', 'logo.png');
   static visNetwork = path.resolve(__dirname, '..', '..', 'node_modules', 'vis-network', 'dist');
