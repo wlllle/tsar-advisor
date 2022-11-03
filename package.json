@@ -108,7 +108,7 @@
     "commands": [
       {
         "command": "tsar.start",
-        "title": "TSAR Analyze file"
+        "title": "TSAR Analyze"
       },
       {
         "command": "tsar.stop",
@@ -122,39 +122,39 @@
       },
       {
         "command": "tsar.analysis.check",
-        "title": "TSAR Check User-defined Properties"
+        "title": "Check User-defined Properties"
       },
       {
         "command": "tsar.transform.propagate",
-        "title": "TSAR Expression Propagation"
+        "title": "Expression Propagation"
       },
       {
         "command": "tsar.transform.inline",
-        "title": "TSAR Function Inlining"
+        "title": "Function Inlining"
       },
       {
         "command": "tsar.transform.replace",
-        "title": "TSAR Structure Replacement"
+        "title": "Structure Replacement"
       },
       {
         "command": "tsar.transform.rename",
-        "title": "TSAR Local Renaming"
+        "title": "Local Renaming"
       },
       {
         "command": "tsar.transform.dedecls",
-        "title": "TSAR Dead Declarations Elimination"
+        "title": "Dead Declarations Elimination"
       },
       {
         "command": "tsar.parallel.openmp",
-        "title": "TSAR Parallelization with OpenMP"
+        "title": "Parallelization with OpenMP"
       },
       {
         "command": "tsar.parallel.dvmh",
-        "title": "TSAR Parallelization with DVMH"
+        "title": "Parallelization with DVMH"
       },
       {
         "command": "tsar.parallel.dvmhsm",
-        "title": "TSAR Shared Memory Parallelization with DVMH"
+        "title": "Shared Memory Parallelization with DVMH"
       },
       {
         "command": "tsar.loopTree.goto",
@@ -250,309 +250,114 @@
       ],
       "editor/context": [
         {
-          "command": "tsar.parallel.dvmh",
-          "when": "editorLangId == 'cpp'",
-          "group": "1_tsar"
-        },
-        {
-          "command": "tsar.parallel.dvmh",
-          "when": "editorLangId == 'c'",
-          "group": "1_tsar"
-        },
-        {
-          "command": "tsar.parallel.dvmh",
-          "when": "editorLangId == 'llvm'",
-          "group": "1_tsar"
-        },
-        {
-          "command": "tsar.parallel.dvmhsm",
-          "when": "editorLangId == 'cpp'",
-          "group": "1_tsar"
-        },
-        {
-          "command": "tsar.parallel.dvmhsm",
-          "when": "editorLangId == 'c'",
-          "group": "1_tsar"
-        },
-        {
-          "command": "tsar.parallel.dvmhsm",
-          "when": "editorLangId == 'llvm'",
-          "group": "1_tsar"
-        },
-        {
-          "command": "tsar.parallel.openmp",
-          "when": "editorLangId == 'cpp'",
-          "group": "1_tsar"
-        },
-        {
-          "command": "tsar.parallel.openmp",
-          "when": "editorLangId == 'c'",
-          "group": "1_tsar"
-        },
-        {
-          "command": "tsar.parallel.openmp",
-          "when": "editorLangId == 'llvm'",
-          "group": "1_tsar"
-        },
-        {
-          "command": "tsar.transform.rename",
-          "when": "editorLangId == 'cpp'",
-          "group": "1_tsar"
-        },
-        {
-          "command": "tsar.transform.rename",
-          "when": "editorLangId == 'c'",
-          "group": "1_tsar"
-        },
-        {
-          "command": "tsar.transform.rename",
-          "when": "editorLangId == 'llvm'",
-          "group": "1_tsar"
-        },
-        {
-          "command": "tsar.transform.dedecls",
-          "when": "editorLangId == 'cpp'",
-          "group": "1_tsar"
-        },
-        {
-          "command": "tsar.transform.dedecls",
-          "when": "editorLangId == 'c'",
-          "group": "1_tsar"
-        },
-        {
-          "command": "tsar.transform.dedecls",
-          "when": "editorLangId == 'llvm'",
-          "group": "1_tsar"
-        },
-        {
-          "command": "tsar.transform.inline",
-          "when": "editorLangId == 'cpp'",
-          "group": "1_tsar"
-        },
-        {
-          "command": "tsar.transform.inline",
-          "when": "editorLangId == 'c'",
-          "group": "1_tsar"
-        },
-        {
-          "command": "tsar.transform.inline",
-          "when": "editorLangId == 'llvm'",
-          "group": "1_tsar"
-        },
-        {
-          "command": "tsar.transform.propagate",
-          "when": "editorLangId == 'cpp'",
-          "group": "1_tsar"
-        },
-        {
-          "command": "tsar.transform.propagate",
-          "when": "editorLangId == 'c'",
-          "group": "1_tsar"
-        },
-        {
-          "command": "tsar.transform.propagate",
-          "when": "editorLangId == 'llvm'",
-          "group": "1_tsar"
-        },
-        {
-          "command": "tsar.transform.replace",
-          "when": "editorLangId == 'cpp'",
-          "group": "1_tsar"
-        },
-        {
-          "command": "tsar.transform.replace",
-          "when": "editorLangId == 'c'",
-          "group": "1_tsar"
-        },
-        {
-          "command": "tsar.transform.replace",
-          "when": "editorLangId == 'llvm'",
-          "group": "1_tsar"
-        },
-        {
-          "command": "tsar.analysis.check",
-          "when": "editorLangId == 'cpp'",
-          "group": "1_tsar"
-        },
-        {
-          "command": "tsar.analysis.check",
-          "when": "editorLangId == 'c'",
-          "group": "1_tsar"
-        },
-        {
-          "command": "tsar.analysis.check",
-          "when": "editorLangId == 'llvm'",
-          "group": "1_tsar"
-        },
-        {
           "command": "tsar.start",
-          "when": "editorLangId == 'cpp'",
+          "when": "resourceLangId == 'c' || resourceLangId == 'cpp' || resourceLangId == 'llvm'",
           "group": "1_tsar"
         },
         {
-          "command": "tsar.start",
-          "when": "editorLangId == 'c'",
+          "submenu": "tsar.submenu.check",
+          "when": "resourceLangId == 'c' || resourceLangId == 'cpp'",
           "group": "1_tsar"
         },
         {
-          "command": "tsar.start",
-          "when": "editorLangId == 'llvm'",
+          "submenu": "tsar.submenu.tfm",
+          "when": "resourceLangId == 'c' || resourceLangId == 'cpp'",
+          "group": "1_tsar"
+        },
+        {
+          "submenu": "tsar.submenu.parallel",
+          "when": "resourceLangId == 'c' || resourceLangId == 'cpp'",
           "group": "1_tsar"
         }
       ],
       "explorer/context": [
         {
-          "command": "tsar.parallel.dvmh",
-          "when": "resourceLangId == 'cpp'",
-          "group": "1_tsar"
-        },
-        {
-          "command": "tsar.parallel.dvmh",
-          "when": "resourceLangId == 'c'",
-          "group": "1_tsar"
-        },
-        {
-          "command": "tsar.parallel.dvmh",
-          "when": "resourceLangId == 'llvm'",
-          "group": "1_tsar"
-        },
-        {
-          "command": "tsar.parallel.dvmhsm",
-          "when": "resourceLangId == 'cpp'",
-          "group": "1_tsar"
-        },
-        {
-          "command": "tsar.parallel.dvmhsm",
-          "when": "resourceLangId == 'c'",
-          "group": "1_tsar"
-        },
-        {
-          "command": "tsar.parallel.dvmhsm",
-          "when": "resourceLangId == 'llvm'",
-          "group": "1_tsar"
-        },
-        {
-          "command": "tsar.parallel.openmp",
-          "when": "resourceLangId == 'cpp'",
-          "group": "1_tsar"
-        },
-        {
-          "command": "tsar.parallel.openmp",
-          "when": "resourceLangId == 'c'",
-          "group": "1_tsar"
-        },
-        {
-          "command": "tsar.parallel.openmp",
-          "when": "resourceLangId == 'llvm'",
-          "group": "1_tsar"
-        },
-        {
-          "command": "tsar.transform.rename",
-          "when": "resourceLangId' == 'cpp'",
-          "group": "1_tsar"
-        },
-        {
-          "command": "tsar.transform.rename",
-          "when": "resourceLangId == 'c'",
-          "group": "1_tsar"
-        },
-        {
-          "command": "tsar.transform.rename",
-          "when": "resourceLangId == 'llvm'",
-          "group": "1_tsar"
-        },
-        {
-          "command": "tsar.transform.dedecls",
-          "when": "resourceLangId' == 'cpp'",
-          "group": "1_tsar"
-        },
-        {
-          "command": "tsar.transform.dedecls",
-          "when": "resourceLangId == 'c'",
-          "group": "1_tsar"
-        },
-        {
-          "command": "tsar.transform.dedecls",
-          "when": "resourceLangId == 'llvm'",
-          "group": "1_tsar"
-        },
-        {
-          "command": "tsar.transform.inline",
-          "when": "resourceLangId' == 'cpp'",
-          "group": "1_tsar"
-        },
-        {
-          "command": "tsar.transform.inline",
-          "when": "resourceLangId == 'c'",
-          "group": "1_tsar"
-        },
-        {
-          "command": "tsar.transform.inline",
-          "when": "resourceLangId == 'llvm'",
-          "group": "1_tsar"
-        },
-        {
-          "command": "tsar.transform.propagate",
-          "when": "resourceLangId == 'cpp'",
-          "group": "1_tsar"
-        },
-        {
-          "command": "tsar.transform.propagate",
-          "when": "resourceLangId == 'c'",
-          "group": "1_tsar"
-        },
-        {
-          "command": "tsar.transform.propagate",
-          "when": "resourceLangId == 'llvm'",
-          "group": "1_tsar"
-        },
-        {
-          "command": "tsar.transform.replace",
-          "when": "resourceLangId == 'cpp'",
-          "group": "1_tsar"
-        },
-        {
-          "command": "tsar.transform.replace",
-          "when": "resourceLangId == 'c'",
-          "group": "1_tsar"
-        },
-        {
-          "command": "tsar.transform.replace",
-          "when": "resourceLangId == 'llvm'",
-          "group": "1_tsar"
-        },
-        {
-          "command": "tsar.analysis.check",
-          "when": "resourceLangId == 'cpp'",
-          "group": "1_tsar"
-        },
-        {
-          "command": "tsar.analysis.check",
-          "when": "resourceLangId == 'c'",
-          "group": "1_tsar"
-        },
-        {
-          "command": "tsar.analysis.check",
-          "when": "resourceLangId == 'llvm'",
-          "group": "1_tsar"
-        },
-        {
           "command": "tsar.start",
-          "when": "resourceLangId == 'cpp'",
+          "when": "resourceLangId == 'c' || resourceLangId == 'cpp' || resourceLangId == 'llvm'",
           "group": "1_tsar"
         },
         {
-          "command": "tsar.start",
-          "when": "resourceLangId == 'c'",
+          "submenu": "tsar.submenu.check",
+          "when": "resourceLangId == 'c' || resourceLangId == 'cpp'",
           "group": "1_tsar"
         },
         {
-          "command": "tsar.start",
-          "when": "resourceLangId == 'llvm'",
+          "submenu": "tsar.submenu.tfm",
+          "when": "resourceLangId == 'c' || resourceLangId == 'cpp'",
+          "group": "1_tsar"
+        },
+        {
+          "submenu": "tsar.submenu.parallel",
+          "when": "resourceLangId == 'c' || resourceLangId == 'cpp'",
           "group": "1_tsar"
         }
+      ],
+      "tsar.submenu.tfm": [
+        {
+          "command": "tsar.transform.replace",
+          "when": "resourceLangId == 'c' || resourceLangId == 'cpp' || resourceLangId == 'llvm'",
+          "group": "naviagtion"
+        },
+        {
+          "command": "tsar.transform.propagate",
+          "when": "resourceLangId == 'c' || resourceLangId == 'cpp' || resourceLangId == 'llvm'",
+          "group": "naviagtion"
+        },
+        {
+          "command": "tsar.transform.inline",
+          "when": "resourceLangId == 'c' || resourceLangId == 'cpp' || resourceLangId == 'llvm'",
+          "group": "naviagtion"
+        },
+        {
+          "command": "tsar.transform.dedecls",
+          "when": "resourceLangId == 'c' || resourceLangId == 'cpp' || resourceLangId == 'llvm'",
+          "group": "naviagtion"
+        },
+        {
+          "command": "tsar.transform.rename",
+          "when": "resourceLangId == 'c' || resourceLangId == 'cpp' || resourceLangId == 'llvm'",
+          "group": "naviagtion"
+        }
+      ],
+      "tsar.submenu.parallel": [
+        {
+          "command": "tsar.parallel.openmp",
+          "when": "resourceLangId == 'c' || resourceLangId == 'cpp' || resourceLangId == 'llvm'",
+          "group": "naviagtion"
+        },
+        {
+          "command": "tsar.parallel.dvmhsm",
+          "when": "resourceLangId == 'c' || resourceLangId == 'cpp' || resourceLangId == 'llvm'",
+          "group": "naviagtion"
+        },
+        {
+          "command": "tsar.parallel.dvmh",
+          "when": "resourceLangId == 'c' || resourceLangId == 'cpp' || resourceLangId == 'llvm'",
+          "group": "naviagtion"
+        }
+      ],
+      "tsar.submenu.check": [
+        {
+          "command": "tsar.analysis.check",
+          "when": "resourceLangId == 'c' || resourceLangId == 'cpp' || resourceLangId == 'llvm'",
+          "group": "naviagtion"
+        }
       ]
-    }
+    },
+    "submenus": [
+      {
+        "id": "tsar.submenu.tfm",
+        "label": "TSAR Transform"
+      },
+      {
+        "id": "tsar.submenu.parallel",
+        "label": "TSAR Parallelize"
+      },
+      {
+        "id": "tsar.submenu.check",
+        "label": "TSAR Check"
+      }
+    ]
   },
   "scripts": {
     "prepublish-clean": "rimraf out",
