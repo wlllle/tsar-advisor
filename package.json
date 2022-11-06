@@ -18,7 +18,7 @@
   ],
   "license": "SEE LICENSE IN LICENSE.txt",
   "engines": {
-    "vscode": "^1.40.0"
+    "vscode": "^1.70.0"
   },
   "categories": [
     "Other"
@@ -64,7 +64,7 @@
             "type": "boolean",
             "default": false
           },
-          "tsar-advisor.advanced.analysisServer" : {
+          "tsar-advisor.advanced.analysisServer": {
             "description": "Analysis server which is used to analyze a project. Set path to the analysis server executable if it is not available in the PATH environment variable.",
             "type": "string",
             "default": "tsar-server"
@@ -369,18 +369,18 @@
     "watch": "npm-run-all -c -n -p watch-ts watch-css"
   },
   "devDependencies": {
-    "typescript": "^3.8",
-    "@types/vscode": "^1.40.0",
-    "@types/node": "^12.8.1",
+    "typescript": "^4.8.2",
+    "@types/vscode": "^1.70.0",
+    "@types/node": "^18.7.14",
     "catw": "~1.0.1",
     "npm-run-all": "~4.1.5",
     "rimraf": "~3.0.0"
   },
   "extensionDependencies": [],
   "dependencies": {
-    "bootstrap": "~4.3.1",
-    "jquery": "^3.4.1",
-    "vis-network": "~6.3.2",
+    "bootstrap": "^5.2.0",
+    "jquery": "^3.6.1",
+    "vis-network": "~9.1.2",
     "which": "~2.0.2"
   }
 }
