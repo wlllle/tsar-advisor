@@ -24,6 +24,7 @@
     "Other"
   ],
   "activationEvents": [
+    "workspaceContains:./.tsar/projects.json",
     "onCommand:tsar.start",
     "onCommand:tsar.analysis.check",
     "onCommand:tsar.transform.propagate",
@@ -94,6 +95,10 @@
     "views": {
       "tsar-explorer": [
         {
+          "id": "tsar.projects",
+          "name": "Projects"
+        },
+        {
           "id": "tsar.loopTree",
           "name": "Loop Tree"
         }
@@ -103,6 +108,10 @@
       {
         "view": "tsar.loopTree",
         "contents": "Please, choose project to analyze."
+      },
+      {
+        "view": "tsar.loopTree",
+        "contents": "[Download SAPFOR](http://dvm-system.org/)\nAfter installing, please [reload](command:workbench.action.reloadWindow)."
       }
     ],
     "commands": [

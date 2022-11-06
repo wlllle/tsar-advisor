@@ -23,6 +23,7 @@ import * as t from './transformProvider';
 import server from './tools';
 import { FileListProvider } from './fileList';
 import { LoopTreeViewProvider } from './loopExplorer';
+import { registerTrees } from './tree/registerTrees';
 
 /**
  * Open log file (log.Extension.log), returns true on success.
@@ -58,6 +59,7 @@ function openLog(): boolean {
 export function activate(context: vscode.ExtensionContext) {
   if (!openLog())
     return;
+  registerTrees();
   context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(e => {
     if (e.affectsConfiguration(`${log.Extension.id}.advanced.log.enabled`)) {
       let userConfig = vscode.workspace.getConfiguration(log.Extension.id);

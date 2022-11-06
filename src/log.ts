@@ -63,6 +63,7 @@ export class Error {
   static openFile = 'can not open file {0}';
   static unavailable = 'project is unavailable'
   static openLog = 'can not open log file';
+  static invalidProjectsJson = 'invalid project json file'
   static active = 'can not activate analysis session';
   static osIncompatible = 'incompatible type of platform, {0} expected';
   static environment = 'can not establish environment for compiler';
